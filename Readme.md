@@ -1,6 +1,12 @@
-# ConvertFlow
+# ConvertFlow (PNG to SVG Converter (Wrapper))
 
-ConvertFlow is a modern, browser-based PNG to SVG converter that processes files locally with no server uploads required. Built with React, TypeScript, and Tailwind CSS, it offers a seamless and secure way to convert PNG images to scalable vector graphics.
+⚠️ **This is not a true vector converter**  
+A lightweight utility that wraps PNG images in SVG containers while preserving raster data.
+
+---
+
+
+
 
 ## Features
 
@@ -10,6 +16,11 @@ ConvertFlow is a modern, browser-based PNG to SVG converter that processes files
 - 💫 **Batch Processing**: Convert multiple files simultaneously
 - 🎨 **Quality Preservation**: Maintains image quality during conversion
 - 📱 **Responsive Design**: Fully optimized for all screen sizes
+  ✅ **Preserves original quality**  
+ 
+❌ **Not true vector graphics**  
+❌ **No path editing possible**  
+❌ **Larger files than original PNG**
 
 ## Tech Stack
 
