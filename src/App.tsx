@@ -6,9 +6,10 @@ import { HowItWorks } from './components/HowItWorks';
 import { ConverterSection } from './components/ConverterSection';
 import { FAQ } from './components/FAQ';
 import { Footer } from './components/Footer';
+import { Analytics } from "@vercel/analytics/next"
 
 function App() {
-  const converterRef = useRef<HTMLElement>(null);
+  const converterRef = useRef<HTMLDivElement>(null);
 
   const scrollToConverter = () => {
     converterRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -16,6 +17,7 @@ function App() {
 
   return (
     <div className="min-h-screen">
+       <Analytics />
       <Navigation />
       <Hero onGetStarted={scrollToConverter} />
       <Features />
