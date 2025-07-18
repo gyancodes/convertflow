@@ -11,3 +11,7 @@ export interface ConversionError {
   message: string;
   file?: File;
 }
+
+// PNG to SVG converter types
+export * from './converter';
+export * from './vectorization';
