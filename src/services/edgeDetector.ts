@@ -18,6 +18,7 @@ export class EdgeDetector {
       lowThreshold?: number;
       highThreshold?: number;
       gaussianKernelSize?: number;
+      gaussianBlur?: boolean;
     } = {}
   ): Promise<EdgeData> {
     const algorithm = options.algorithm || 'sobel';
@@ -30,7 +31,12 @@ export class EdgeDetector {
         options.gaussianKernelSize || 5
       );
     } else {
-      return this.detectEdgesSobel(imageData, options.threshold || 50);
+      return this.detectEdgesSobel(
+        imageData, 
+        options.threshold || 50,
+        options.gaussianBlur,
+        options.gaussianKernelSize
+      );
     }
   }
 
@@ -42,7 +48,9 @@ export class EdgeDetector {
    */
   async detectEdgesSobel(
     imageData: ImageData,
-    threshold: number = 50
+    threshold: number = 50,
+    gaussianBlur: boolean = false,
+    gaussianKernelSize: number = 3
   ): Promise<EdgeData> {
     const { width, height } = imageData;
     
@@ -51,7 +59,12 @@ export class EdgeDetector {
       throw new Error('Image too large for edge detection. Please use a smaller image.');
     }
     
-    const grayscale = this.convertToGrayscale(imageData);
+    // Apply Gaussian blur if requested
+    const processedImage = gaussianBlur 
+      ? this.applyGaussianBlur(imageData, gaussianKernelSize)
+      : imageData;
+    
+    const grayscale = this.convertToGrayscale(processedImage);
     
     const magnitude = new Float32Array(width * height);
     const direction = new Float32Array(width * height);

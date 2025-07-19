@@ -5,6 +5,28 @@ import { ColorPalette } from "../types/vectorization";
  */
 export class ColorQuantizer {
   /**
+   * Quantize colors using specified algorithm
+   * @param imageData - Input image data
+   * @param colorCount - Target number of colors (2-256)
+   * @param algorithm - Algorithm to use ('kmeans' or 'mediancut')
+   * @returns Quantized color palette
+   */
+  async quantizeColors(
+    imageData: ImageData,
+    colorCount: number,
+    algorithm: 'kmeans' | 'mediancut' = 'kmeans'
+  ): Promise<ColorPalette> {
+    switch (algorithm) {
+      case 'kmeans':
+        return this.quantizeKMeans(imageData, colorCount);
+      case 'mediancut':
+        return this.quantizeMedianCut(imageData, colorCount);
+      default:
+        throw new Error(`Unknown quantization algorithm: ${algorithm}`);
+    }
+  }
+
+  /**
    * Quantize colors using k-means clustering algorithm
    * @param imageData - Input image data
    * @param colorCount - Target number of colors (2-256)

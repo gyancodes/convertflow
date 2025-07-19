@@ -1,14 +1,26 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { VectorizationConfig, ConversionJob, ProcessingProgress, ProcessingResult, ConverterState } from '../../types/converter';
+import { ConversionError } from '../../types/errors';
 import { FileUpload } from './FileUpload';
 import { ConfigurationPanel } from './ConfigurationPanel';
 import { ProcessingProgress as ProcessingProgressComponent } from './ProcessingProgress';
 import { PreviewComparison } from './PreviewComparison';
+import ErrorDisplay from './ErrorDisplay';
+import ErrorBoundary from './ErrorBoundary';
 import { ImageProcessor } from '../../services/imageProcessor';
 import { Vectorizer } from '../../services/vectorizer';
 import { SvgGenerator } from '../../services/svgGenerator';
 import { ColorQuantizer } from '../../services/colorQuantizer';
 import { EdgeDetector } from '../../services/edgeDetector';
+import { 
+  withFileValidation, 
+  withImageProcessing, 
+  withSvgGeneration,
+  withTimeout,
+  withMemoryMonitoring,
+  checkBrowserCompatibility,
+  validateConfiguration
+} from '../../utils/errorUtils';
 
 interface PngToSvgConverterProps {
   /** Optional initial configuration */
@@ -52,6 +64,8 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
   });
 
   const [completedJob, setCompletedJob] = useState<ConversionJob | null>(null);
+  const [currentError, setCurrentError] = useState<ConversionError | null>(null);
+  const [browserCompatibilityError, setBrowserCompatibilityError] = useState<ConversionError | null>(null);
 
   // Service instances
   const imageProcessorRef = useRef<ImageProcessor>();
@@ -59,6 +73,14 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
   const svgGeneratorRef = useRef<SvgGenerator>();
   const colorQuantizerRef = useRef<ColorQuantizer>();
   const edgeDetectorRef = useRef<EdgeDetector>();
+
+  // Check browser compatibility on mount
+  React.useEffect(() => {
+    const compatibilityError = checkBrowserCompatibility();
+    if (compatibilityError) {
+      setBrowserCompatibilityError(compatibilityError);
+    }
+  }, []);
 
   // Initialize services
   const initializeServices = useCallback(() => {
@@ -143,12 +165,17 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
     };
   }, []);
 
-  // Error handling and recovery
-  const handleProcessingError = useCallback(async (error: Error, job: ConversionJob): Promise<boolean> => {
+  // Enhanced error handling with ConversionError support
+  const handleProcessingError = useCallback(async (error: ConversionError | Error, job: ConversionJob): Promise<boolean> => {
     console.error('Processing error:', error);
+    
+    // Set the current error for display
+    if (error instanceof Error && 'type' in error) {
+      setCurrentError(error as ConversionError);
+    }
 
-    // Try simple fallback conversion first
-    if (!error.message.includes('fallback')) {
+    // Try simple fallback conversion first for recoverable errors
+    if ((error as ConversionError).recoverable !== false && !error.message.includes('fallback')) {
       setCurrentProgress({
         stage: 'preprocess',
         progress: 0,
@@ -158,18 +185,21 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
       try {
         const result = await simpleFallbackConversion(job.file);
         updateJobResult(job.id, result);
+        setCurrentError(null); // Clear error on successful recovery
         return true;
       } catch (fallbackError) {
         console.error('Fallback conversion also failed:', fallbackError);
       }
     }
 
-    // If fallback also fails, try with reduced settings
-    if (error.message.includes('memory') || error.message.includes('Memory') || error.message.includes('large')) {
+    // Handle specific error types with targeted recovery
+    const errorMessage = error.message.toLowerCase();
+    if (errorMessage.includes('memory') || errorMessage.includes('large') || errorMessage.includes('complex')) {
       const reducedConfig = {
         ...job.config,
         colorCount: Math.max(4, Math.floor(job.config.colorCount / 4)),
-        pathSimplification: Math.min(10, job.config.pathSimplification * 3)
+        pathSimplification: Math.min(10, job.config.pathSimplification * 3),
+        smoothingLevel: 'low' as const
       };
 
       setCurrentProgress({
@@ -181,12 +211,14 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
       try {
         const result = await processImageWithConfig(job.file, reducedConfig);
         updateJobResult(job.id, result);
+        setCurrentError(null); // Clear error on successful recovery
         return true;
       } catch (retryError) {
         // Final fallback
         try {
           const result = await simpleFallbackConversion(job.file);
           updateJobResult(job.id, result);
+          setCurrentError(null);
           return true;
         } catch (finalError) {
           updateJobError(job.id, `All conversion methods failed: ${finalError.message}`);
@@ -199,31 +231,36 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
     try {
       const result = await simpleFallbackConversion(job.file);
       updateJobResult(job.id, result);
+      setCurrentError(null);
       return true;
     } catch (fallbackError) {
-      updateJobError(job.id, `Processing failed: ${error.message}`);
+      updateJobError(job.id, error.message);
       return false;
     }
-  }, [simpleFallbackConversion]);
+  }, [simpleFallbackConversion, processImageWithConfig, updateJobResult, updateJobError]);
 
-  // Core processing pipeline
+  // Core processing pipeline with comprehensive error handling
   const processImageWithConfig = useCallback(async (file: File, config: VectorizationConfig): Promise<ProcessingResult> => {
     const startTime = performance.now();
     
-    try {
-      // Stage 1: Preprocess image
+    // Validate configuration first
+    validateConfiguration(config);
+    
+    return await withImageProcessing(async () => {
+      // Stage 1: Preprocess image with file validation
       setCurrentProgress({
         stage: 'preprocess',
         progress: 10,
         message: 'Loading and preprocessing image...'
       });
 
-      const imageData = await Promise.race([
-        loadImageToCanvas(file),
-        new Promise<never>((_, reject) => 
-          setTimeout(() => reject(new Error('Image loading timeout')), 15000)
-        )
-      ]);
+      const imageData = await withFileValidation(async () => {
+        return await withTimeout(
+          () => loadImageToCanvas(file),
+          30000,
+          'Image loading took too long'
+        );
+      }, file);
       
       setCurrentProgress({
         stage: 'preprocess',
@@ -231,7 +268,7 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
         message: 'Preprocessing complete'
       });
 
-      // Stage 2: Color quantization
+      // Stage 2: Color quantization with memory monitoring
       setCurrentProgress({
         stage: 'quantize',
         progress: 0,
@@ -239,12 +276,13 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
       });
 
       const colorQuantizer = colorQuantizerRef.current!;
-      const palette = await Promise.race([
-        colorQuantizer.quantizeKMeans(imageData, Math.min(config.colorCount, 32)), // Limit colors for performance
-        new Promise<never>((_, reject) => 
-          setTimeout(() => reject(new Error('Color quantization timeout')), 10000)
-        )
-      ]);
+      const palette = await withMemoryMonitoring(async () => {
+        return await withTimeout(
+          () => colorQuantizer.quantizeKMeans(imageData, Math.min(config.colorCount, 32)),
+          15000,
+          'Color quantization took too long'
+        );
+      }, 150); // 150MB memory limit
       
       setCurrentProgress({
         stage: 'quantize',
@@ -260,7 +298,7 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
         message: `Reduced to ${palette.colors.length} colors`
       });
 
-      // Stage 3: Edge detection and vectorization
+      // Stage 3: Edge detection and vectorization with timeout
       setCurrentProgress({
         stage: 'vectorize',
         progress: 0,
@@ -268,14 +306,11 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
       });
 
       const edgeDetector = edgeDetectorRef.current!;
-      const edgeData = await Promise.race([
-        config.algorithm === 'photo' 
-          ? edgeDetector.detectEdgesCanny(quantizedImageData, 50, 150, 3) // Reduced kernel size
-          : edgeDetector.detectEdgesSobel(quantizedImageData, config.smoothingLevel === 'high' ? 30 : 50),
-        new Promise<never>((_, reject) => 
-          setTimeout(() => reject(new Error('Edge detection timeout')), 15000)
-        )
-      ]);
+      const edgeData = await withTimeout(async () => {
+        return config.algorithm === 'photo' 
+          ? edgeDetector.detectEdgesCanny(quantizedImageData, 50, 150, 3)
+          : edgeDetector.detectEdgesSobel(quantizedImageData, config.smoothingLevel === 'high' ? 30 : 50);
+      }, 20000, 'Edge detection took too long');
 
       setCurrentProgress({
         stage: 'vectorize',
@@ -297,7 +332,7 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
         message: `Generated ${vectorPaths.length} vector paths`
       });
 
-      // Stage 4: SVG generation
+      // Stage 4: SVG generation with error handling
       setCurrentProgress({
         stage: 'generate',
         progress: 0,
@@ -305,12 +340,13 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
       });
 
       const svgGenerator = svgGeneratorRef.current!;
-      const result = await svgGenerator.generateSVG(
-        vectorPaths,
-        imageData.width,
-        imageData.height,
-        palette
-      );
+      const result = await withSvgGeneration(async () => {
+        return await withTimeout(
+          () => svgGenerator.generateSVG(vectorPaths, imageData.width, imageData.height, palette),
+          10000,
+          'SVG generation took too long'
+        );
+      }, { paths: vectorPaths, config });
 
       setCurrentProgress({
         stage: 'generate',
@@ -326,9 +362,11 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
         originalSize: file.size
       };
 
-    } catch (error) {
-      throw new Error(`Processing failed: ${error.message}`);
-    }
+    }, {
+      imageData,
+      config,
+      imageProcessor: imageProcessorRef.current
+    });
   }, []);
 
   // Helper function to load image to canvas
@@ -448,26 +486,56 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
     }
   }, [initializeServices, processImageWithConfig, handleProcessingError, updateJobResult]);
 
-  // Event handlers
-  const handleFilesSelected = useCallback((files: File[]) => {
-    const jobs = files.map(file => createJob(file, converterState.globalConfig));
-    
-    setConverterState(prev => ({
-      ...prev,
-      files: [...prev.files, ...jobs]
-    }));
+  // Event handlers with error handling
+  const handleFilesSelected = useCallback(async (files: File[]) => {
+    try {
+      // Clear any previous errors
+      setCurrentError(null);
+      
+      // Validate files before creating jobs
+      await withFileValidation(async () => {
+        // Basic validation is handled by the file upload component
+        // Additional validation can be added here
+        return Promise.resolve();
+      });
 
-    // Auto-start processing if not in batch mode and only one file
-    if (!converterState.batchMode && jobs.length === 1) {
-      processJob(jobs[0]);
+      const jobs = files.map(file => createJob(file, converterState.globalConfig));
+      
+      setConverterState(prev => ({
+        ...prev,
+        files: [...prev.files, ...jobs]
+      }));
+
+      // Auto-start processing if not in batch mode and only one file
+      if (!converterState.batchMode && jobs.length === 1) {
+        processJob(jobs[0]);
+      }
+    } catch (error) {
+      if (error instanceof Error && 'type' in error) {
+        setCurrentError(error as ConversionError);
+      } else {
+        console.error('File selection error:', error);
+      }
     }
   }, [converterState.globalConfig, converterState.batchMode, createJob, processJob]);
 
   const handleConfigChange = useCallback((config: VectorizationConfig) => {
-    setConverterState(prev => ({
-      ...prev,
-      globalConfig: config
-    }));
+    try {
+      // Validate configuration before applying
+      validateConfiguration(config);
+      setCurrentError(null); // Clear any validation errors
+      
+      setConverterState(prev => ({
+        ...prev,
+        globalConfig: config
+      }));
+    } catch (error) {
+      if (error instanceof Error && 'type' in error) {
+        setCurrentError(error as ConversionError);
+      } else {
+        console.error('Configuration validation error:', error);
+      }
+    }
   }, []);
 
   const handleStartProcessing = useCallback(() => {
@@ -513,6 +581,7 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
       isProcessing: false
     }));
     setCompletedJob(null);
+    setCurrentError(null); // Clear any errors
     setCurrentProgress({
       stage: 'upload',
       progress: 0,
@@ -520,15 +589,47 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
     });
   }, []);
 
+  // Error handling callbacks
+  const handleRetryError = useCallback(() => {
+    if (currentError && completedJob) {
+      setCurrentError(null);
+      processJob(completedJob);
+    }
+  }, [currentError, completedJob, processJob]);
+
+  const handleDismissError = useCallback(() => {
+    setCurrentError(null);
+  }, []);
+
   return (
-    <div className="png-to-svg-converter max-w-6xl mx-auto p-6 space-y-8">
-      {/* Header */}
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">PNG to SVG Converter</h1>
-        <p className="text-gray-600">
-          Convert your PNG images to scalable vector graphics with advanced vectorization algorithms
-        </p>
-      </div>
+    <ErrorBoundary>
+      <div className="png-to-svg-converter max-w-6xl mx-auto p-6 space-y-8">
+        {/* Header */}
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">PNG to SVG Converter</h1>
+          <p className="text-gray-600">
+            Convert your PNG images to scalable vector graphics with advanced vectorization algorithms
+          </p>
+        </div>
+
+        {/* Browser Compatibility Error */}
+        {browserCompatibilityError && (
+          <ErrorDisplay
+            error={browserCompatibilityError}
+            onDismiss={() => setBrowserCompatibilityError(null)}
+            showTechnicalDetails={true}
+          />
+        )}
+
+        {/* Current Error Display */}
+        {currentError && (
+          <ErrorDisplay
+            error={currentError}
+            onRetry={currentError.recoverable ? handleRetryError : undefined}
+            onDismiss={handleDismissError}
+            showTechnicalDetails={false}
+          />
+        )}
 
       {/* Configuration Panel */}
       <ConfigurationPanel
@@ -598,28 +699,29 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
         </div>
       )}
 
-      {/* Error Display */}
-      {completedJob?.status === 'failed' && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-red-800 mb-2">Conversion Failed</h3>
-          <p className="text-red-700 mb-4">{completedJob.error}</p>
-          <div className="flex space-x-4">
-            <button
-              onClick={() => processJob(completedJob)}
-              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-            >
-              Retry
-            </button>
-            <button
-              onClick={handleReset}
-              className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
-            >
-              Start Over
-            </button>
+        {/* Legacy Error Display for Failed Jobs */}
+        {completedJob?.status === 'failed' && !currentError && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-red-800 mb-2">Conversion Failed</h3>
+            <p className="text-red-700 mb-4">{completedJob.error}</p>
+            <div className="flex space-x-4">
+              <button
+                onClick={() => processJob(completedJob)}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+              >
+                Retry
+              </button>
+              <button
+                onClick={handleReset}
+                className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+              >
+                Start Over
+              </button>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </ErrorBoundary>
   );
 };
 
