@@ -14,15 +14,21 @@ export class ColorQuantizer {
   async quantizeKMeans(
     imageData: ImageData,
     colorCount: number,
-    maxIterations: number = 50
+    maxIterations: number = 20 // Reduced from 50 to prevent hanging
   ): Promise<ColorPalette> {
     const pixels = this.extractPixels(imageData);
 
+    // Limit pixel count for performance
+    const maxPixels = 10000;
+    const sampledPixels = pixels.length > maxPixels 
+      ? this.samplePixels(pixels, maxPixels)
+      : pixels;
+
     // Initialize centroids randomly
-    let centroids = this.initializeRandomCentroids(pixels, colorCount);
+    let centroids = this.initializeRandomCentroids(sampledPixels, colorCount);
 
     for (let iteration = 0; iteration < maxIterations; iteration++) {
-      const clusters = this.assignPixelsToClusters(pixels, centroids);
+      const clusters = this.assignPixelsToClusters(sampledPixels, centroids);
       const newCentroids = this.updateCentroids(clusters);
 
       // Check for convergence
@@ -31,11 +37,16 @@ export class ColorQuantizer {
       }
 
       centroids = newCentroids;
+
+      // Yield control to prevent blocking
+      if (iteration % 5 === 0) {
+        await new Promise(resolve => setTimeout(resolve, 0));
+      }
     }
 
     // Calculate weights based on cluster sizes
     const weights = centroids.map((_, index) =>
-      this.getClusterSize(pixels, centroids, index)
+      this.getClusterSize(sampledPixels, centroids, index)
     );
 
     return {
@@ -162,6 +173,20 @@ export class ColorQuantizer {
     }
 
     return pixels;
+  }
+
+  private samplePixels(pixels: Color[], maxCount: number): Color[] {
+    if (pixels.length <= maxCount) return pixels;
+    
+    const step = Math.floor(pixels.length / maxCount);
+    const sampled: Color[] = [];
+    
+    for (let i = 0; i < pixels.length; i += step) {
+      sampled.push(pixels[i]);
+      if (sampled.length >= maxCount) break;
+    }
+    
+    return sampled;
   }
 
   private initializeRandomCentroids(pixels: Color[], count: number): Color[] {

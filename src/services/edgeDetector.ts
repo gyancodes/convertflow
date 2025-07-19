@@ -5,6 +5,36 @@ import { EdgeData, ContourPoint } from "../types/vectorization";
  */
 export class EdgeDetector {
   /**
+   * Generic edge detection method that chooses algorithm based on options
+   * @param imageData - Input image data
+   * @param options - Detection options
+   * @returns Edge data with magnitude and direction
+   */
+  async detectEdges(
+    imageData: ImageData,
+    options: {
+      algorithm?: 'sobel' | 'canny';
+      threshold?: number;
+      lowThreshold?: number;
+      highThreshold?: number;
+      gaussianKernelSize?: number;
+    } = {}
+  ): Promise<EdgeData> {
+    const algorithm = options.algorithm || 'sobel';
+    
+    if (algorithm === 'canny') {
+      return this.detectEdgesCanny(
+        imageData,
+        options.lowThreshold || 50,
+        options.highThreshold || 150,
+        options.gaussianKernelSize || 5
+      );
+    } else {
+      return this.detectEdgesSobel(imageData, options.threshold || 50);
+    }
+  }
+
+  /**
    * Apply Sobel edge detection algorithm
    * @param imageData - Input image data
    * @param threshold - Edge threshold (0-255)
@@ -15,6 +45,12 @@ export class EdgeDetector {
     threshold: number = 50
   ): Promise<EdgeData> {
     const { width, height } = imageData;
+    
+    // Limit processing size for performance
+    if (width * height > 1000000) { // 1 megapixel limit
+      throw new Error('Image too large for edge detection. Please use a smaller image.');
+    }
+    
     const grayscale = this.convertToGrayscale(imageData);
     
     const magnitude = new Float32Array(width * height);
@@ -23,6 +59,9 @@ export class EdgeDetector {
     // Sobel kernels
     const sobelX = [-1, 0, 1, -2, 0, 2, -1, 0, 1];
     const sobelY = [-1, -2, -1, 0, 0, 0, 1, 2, 1];
+
+    let processedRows = 0;
+    const totalRows = height - 2;
 
     for (let y = 1; y < height - 1; y++) {
       for (let x = 1; x < width - 1; x++) {
@@ -45,6 +84,12 @@ export class EdgeDetector {
         
         magnitude[index] = mag > threshold ? mag : 0;
         direction[index] = Math.atan2(gy, gx);
+      }
+      
+      processedRows++;
+      // Yield control every 50 rows to prevent blocking
+      if (processedRows % 50 === 0) {
+        await new Promise(resolve => setTimeout(resolve, 0));
       }
     }
 

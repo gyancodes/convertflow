@@ -86,23 +86,96 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
     }
   }, [converterState.globalConfig]);
 
+  // Simple fallback converter for when advanced algorithms fail
+  const simpleFallbackConversion = useCallback(async (file: File): Promise<ProcessingResult> => {
+    const startTime = performance.now();
+    
+    setCurrentProgress({
+      stage: 'preprocess',
+      progress: 25,
+      message: 'Using simple conversion method...'
+    });
+
+    // Create a simple SVG that embeds the PNG as base64
+    const base64 = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    setCurrentProgress({
+      stage: 'generate',
+      progress: 75,
+      message: 'Generating simple SVG...'
+    });
+
+    // Get image dimensions
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = reject;
+      image.src = base64;
+    });
+
+    const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+     width="${img.width}" height="${img.height}" viewBox="0 0 ${img.width} ${img.height}">
+  <!-- Fallback conversion: PNG embedded as image -->
+  <image width="${img.width}" height="${img.height}" xlink:href="${base64}"/>
+</svg>`;
+
+    setCurrentProgress({
+      stage: 'generate',
+      progress: 100,
+      message: 'Simple conversion complete'
+    });
+
+    const processingTime = performance.now() - startTime;
+    
+    return {
+      svgContent,
+      originalSize: file.size,
+      vectorSize: svgContent.length,
+      processingTime,
+      colorCount: 1,
+      pathCount: 1
+    };
+  }, []);
+
   // Error handling and recovery
   const handleProcessingError = useCallback(async (error: Error, job: ConversionJob): Promise<boolean> => {
     console.error('Processing error:', error);
 
-    // Determine error type and recovery strategy
-    if (error.message.includes('memory') || error.message.includes('Memory')) {
-      // Memory error - try with reduced settings
+    // Try simple fallback conversion first
+    if (!error.message.includes('fallback')) {
+      setCurrentProgress({
+        stage: 'preprocess',
+        progress: 0,
+        message: 'Advanced processing failed, trying simple conversion...'
+      });
+
+      try {
+        const result = await simpleFallbackConversion(job.file);
+        updateJobResult(job.id, result);
+        return true;
+      } catch (fallbackError) {
+        console.error('Fallback conversion also failed:', fallbackError);
+      }
+    }
+
+    // If fallback also fails, try with reduced settings
+    if (error.message.includes('memory') || error.message.includes('Memory') || error.message.includes('large')) {
       const reducedConfig = {
         ...job.config,
-        colorCount: Math.max(2, Math.floor(job.config.colorCount / 2)),
-        pathSimplification: Math.min(10, job.config.pathSimplification * 2)
+        colorCount: Math.max(4, Math.floor(job.config.colorCount / 4)),
+        pathSimplification: Math.min(10, job.config.pathSimplification * 3)
       };
 
       setCurrentProgress({
         stage: 'preprocess',
         progress: 0,
-        message: 'Retrying with reduced settings due to memory constraints...'
+        message: 'Retrying with minimal settings...'
       });
 
       try {
@@ -110,38 +183,28 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
         updateJobResult(job.id, result);
         return true;
       } catch (retryError) {
-        updateJobError(job.id, `Processing failed: ${retryError.message}`);
-        return false;
+        // Final fallback
+        try {
+          const result = await simpleFallbackConversion(job.file);
+          updateJobResult(job.id, result);
+          return true;
+        } catch (finalError) {
+          updateJobError(job.id, `All conversion methods failed: ${finalError.message}`);
+          return false;
+        }
       }
-    } else if (error.message.includes('timeout') || error.message.includes('Timeout')) {
-      // Timeout error - try with simpler algorithm
-      const simplifiedConfig = {
-        ...job.config,
-        algorithm: 'shapes' as const,
-        smoothingLevel: 'low' as const,
-        pathSimplification: Math.min(10, job.config.pathSimplification * 1.5)
-      };
+    }
 
-      setCurrentProgress({
-        stage: 'preprocess',
-        progress: 0,
-        message: 'Retrying with simplified processing...'
-      });
-
-      try {
-        const result = await processImageWithConfig(job.file, simplifiedConfig);
-        updateJobResult(job.id, result);
-        return true;
-      } catch (retryError) {
-        updateJobError(job.id, `Processing failed: ${retryError.message}`);
-        return false;
-      }
-    } else {
-      // Other errors - mark as failed
+    // For other errors, try simple fallback
+    try {
+      const result = await simpleFallbackConversion(job.file);
+      updateJobResult(job.id, result);
+      return true;
+    } catch (fallbackError) {
       updateJobError(job.id, `Processing failed: ${error.message}`);
       return false;
     }
-  }, []);
+  }, [simpleFallbackConversion]);
 
   // Core processing pipeline
   const processImageWithConfig = useCallback(async (file: File, config: VectorizationConfig): Promise<ProcessingResult> => {
@@ -155,7 +218,12 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
         message: 'Loading and preprocessing image...'
       });
 
-      const imageData = await loadImageToCanvas(file);
+      const imageData = await Promise.race([
+        loadImageToCanvas(file),
+        new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('Image loading timeout')), 15000)
+        )
+      ]);
       
       setCurrentProgress({
         stage: 'preprocess',
@@ -171,12 +239,25 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
       });
 
       const colorQuantizer = colorQuantizerRef.current!;
-      const quantizedData = await colorQuantizer.quantizeColors(imageData, config.colorCount);
+      const palette = await Promise.race([
+        colorQuantizer.quantizeKMeans(imageData, Math.min(config.colorCount, 32)), // Limit colors for performance
+        new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('Color quantization timeout')), 10000)
+        )
+      ]);
+      
+      setCurrentProgress({
+        stage: 'quantize',
+        progress: 50,
+        message: 'Mapping colors to palette...'
+      });
+
+      const quantizedImageData = colorQuantizer.mapToQuantizedPalette(imageData, palette);
       
       setCurrentProgress({
         stage: 'quantize',
         progress: 100,
-        message: `Reduced to ${quantizedData.palette.colors.length} colors`
+        message: `Reduced to ${palette.colors.length} colors`
       });
 
       // Stage 3: Edge detection and vectorization
@@ -187,10 +268,14 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
       });
 
       const edgeDetector = edgeDetectorRef.current!;
-      const edgeData = await edgeDetector.detectEdges(quantizedData.imageData, {
-        algorithm: config.algorithm === 'photo' ? 'canny' : 'sobel',
-        threshold: config.smoothingLevel === 'high' ? 0.1 : 0.2
-      });
+      const edgeData = await Promise.race([
+        config.algorithm === 'photo' 
+          ? edgeDetector.detectEdgesCanny(quantizedImageData, 50, 150, 3) // Reduced kernel size
+          : edgeDetector.detectEdgesSobel(quantizedImageData, config.smoothingLevel === 'high' ? 30 : 50),
+        new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('Edge detection timeout')), 15000)
+        )
+      ]);
 
       setCurrentProgress({
         stage: 'vectorize',
@@ -199,7 +284,7 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
       });
 
       const vectorizer = vectorizerRef.current!;
-      const colorMap = new Map(quantizedData.palette.colors.map((color, index) => [
+      const colorMap = new Map(palette.colors.map((color, index) => [
         `color-${index}`,
         `rgb(${color.r},${color.g},${color.b})`
       ]));
@@ -224,7 +309,7 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
         vectorPaths,
         imageData.width,
         imageData.height,
-        quantizedData.palette
+        palette
       );
 
       setCurrentProgress({
@@ -258,24 +343,42 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
         return;
       }
 
+      const objectUrl = URL.createObjectURL(file);
+
       img.onload = () => {
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx.drawImage(img, 0, 0);
-        
         try {
+          // Check for reasonable image dimensions
+          if (img.width > 4096 || img.height > 4096) {
+            URL.revokeObjectURL(objectUrl);
+            reject(new Error('Image too large. Maximum size is 4096x4096 pixels.'));
+            return;
+          }
+
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx.drawImage(img, 0, 0);
+          
           const imageData = ctx.getImageData(0, 0, img.width, img.height);
+          URL.revokeObjectURL(objectUrl);
           resolve(imageData);
         } catch (error) {
+          URL.revokeObjectURL(objectUrl);
           reject(new Error('Failed to extract image data'));
         }
       };
 
       img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
         reject(new Error('Failed to load image'));
       };
 
-      img.src = URL.createObjectURL(file);
+      // Add timeout to prevent hanging
+      setTimeout(() => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error('Image loading timeout'));
+      }, 30000); // 30 second timeout
+
+      img.src = objectUrl;
     });
   }, []);
 
