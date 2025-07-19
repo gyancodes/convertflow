@@ -4,3 +4,4 @@
 
 export * from './canvasUtils';
 export * from './pathUtils';
+export * from './progressUtils';
