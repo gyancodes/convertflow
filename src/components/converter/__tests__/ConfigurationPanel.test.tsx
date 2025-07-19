@@ -77,7 +77,7 @@ describe('ConfigurationPanel', () => {
       />
     );
 
-    const colorSlider = screen.getByRole('slider');
+    const colorSlider = screen.getByLabelText(/color count/i);
     fireEvent.change(colorSlider, { target: { value: '64' } });
 
     await waitFor(() => {
@@ -98,7 +98,8 @@ describe('ConfigurationPanel', () => {
       />
     );
 
-    const colorInput = screen.getByRole('spinbutton');
+    const colorInputs = screen.getAllByRole('spinbutton');
+    const colorInput = colorInputs[0]; // First spinbutton is color count
     fireEvent.change(colorInput, { target: { value: '128' } });
 
     await waitFor(() => {
@@ -119,7 +120,8 @@ describe('ConfigurationPanel', () => {
       />
     );
 
-    const colorInput = screen.getByRole('spinbutton');
+    const colorInputs = screen.getAllByRole('spinbutton');
+    const colorInput = colorInputs[0]; // First spinbutton is color count
     
     // Test minimum limit
     fireEvent.change(colorInput, { target: { value: '1' } });
@@ -171,7 +173,7 @@ describe('ConfigurationPanel', () => {
       />
     );
 
-    const pathSlider = screen.getAllByRole('slider')[1]; // Second slider is path simplification
+    const pathSlider = screen.getByLabelText(/path simplification/i);
     fireEvent.change(pathSlider, { target: { value: '3.5' } });
 
     await waitFor(() => {
@@ -236,14 +238,17 @@ describe('ConfigurationPanel', () => {
     );
 
     // Check that all interactive elements are disabled
-    const colorSlider = screen.getByRole('slider');
-    const colorInput = screen.getByRole('spinbutton');
+    const colorSlider = screen.getByLabelText(/color count/i);
+    const pathSlider = screen.getByLabelText(/path simplification/i);
+    const colorInputs = screen.getAllByRole('spinbutton');
     const smoothingSelect = screen.getByLabelText(/smoothing level/i);
     const algorithmSelect = screen.getByLabelText(/processing algorithm/i);
     const transparencyCheckbox = screen.getByLabelText(/preserve transparency/i);
 
     expect(colorSlider).toBeDisabled();
-    expect(colorInput).toBeDisabled();
+    expect(pathSlider).toBeDisabled();
+    expect(colorInputs[0]).toBeDisabled(); // Color count input
+    expect(colorInputs[1]).toBeDisabled(); // Path simplification input
     expect(smoothingSelect).toBeDisabled();
     expect(algorithmSelect).toBeDisabled();
     expect(transparencyCheckbox).toBeDisabled();
@@ -259,7 +264,8 @@ describe('ConfigurationPanel', () => {
       />
     );
 
-    const colorInput = screen.getByRole('spinbutton');
+    const colorInputs = screen.getAllByRole('spinbutton');
+    const colorInput = colorInputs[0]; // First spinbutton is color count
     fireEvent.change(colorInput, { target: { value: 'invalid' } });
 
     await waitFor(() => {

@@ -92,3 +92,24 @@ global.FileReader = class MockFileReader {
   removeEventListener() {}
   dispatchEvent() { return true; }
 } as any;
+
+// Mock ImageData for canvas-related tests
+global.ImageData = class MockImageData {
+  data: Uint8ClampedArray;
+  width: number;
+  height: number;
+
+  constructor(dataOrWidth: Uint8ClampedArray | number, widthOrHeight?: number, height?: number) {
+    if (typeof dataOrWidth === 'number') {
+      // ImageData(width, height)
+      this.width = dataOrWidth;
+      this.height = widthOrHeight!;
+      this.data = new Uint8ClampedArray(this.width * this.height * 4);
+    } else {
+      // ImageData(data, width, height?)
+      this.data = dataOrWidth;
+      this.width = widthOrHeight!;
+      this.height = height || (dataOrWidth.length / (4 * widthOrHeight!));
+    }
+  }
+} as any;

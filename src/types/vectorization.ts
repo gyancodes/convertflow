@@ -17,6 +17,15 @@ export interface EdgeData {
   /** Image dimensions */
   width: number;
   height: number;
+  /** Edge detection algorithm used */
+  algorithm?: 'sobel' | 'canny';
+  /** Processing parameters used */
+  parameters?: {
+    threshold?: number;
+    lowThreshold?: number;
+    highThreshold?: number;
+    gaussianKernelSize?: number;
+  };
 }
 
 export interface VectorPath {
@@ -39,6 +48,22 @@ export interface ContourPoint {
   y: number;
   /** Whether this is a curve control point */
   isControlPoint?: boolean;
+}
+
+export interface Contour {
+  /** Array of points defining the contour */
+  points: ContourPoint[];
+  /** Whether the contour is closed */
+  closed: boolean;
+  /** Contour length in pixels */
+  length: number;
+  /** Bounding box of the contour */
+  bounds: {
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+  };
 }
 
 export interface ProcessingOptions {
