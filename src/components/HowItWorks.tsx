@@ -7,27 +7,27 @@ export const HowItWorks: React.FC = () => {
       icon: Upload,
       title: 'Upload Your PNG',
       description: 'Drag and drop your PNG files or click to browse from your device',
-      color: 'from-blue-500 to-blue-600'
+      number: '01'
     },
     {
       icon: Zap,
       title: 'Instant Conversion',
       description: 'Our advanced algorithm converts your PNG to SVG while preserving quality',
-      color: 'from-purple-500 to-purple-600'
+      number: '02'
     },
     {
       icon: Download,
       title: 'Download SVG',
       description: 'Download your converted SVG files individually or all at once',
-      color: 'from-green-500 to-green-600'
+      number: '03'
     }
   ];
 
   return (
-    <section id="how-it-works" className="py-20 bg-gradient-to-br from-gray-50 to-blue-50">
-      <div className="container mx-auto px-4">
+    <section id="how-it-works" className="py-24 bg-white">
+      <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+          <h2 className="text-4xl md:text-5xl font-bold text-black mb-4">
             How It Works
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
@@ -35,27 +35,26 @@ export const HowItWorks: React.FC = () => {
           </p>
         </div>
         
-        <div className="max-w-4xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-            {/* Connection lines for desktop */}
-            <div className="hidden md:block absolute top-16 left-1/3 right-1/3 h-0.5 bg-gradient-to-r from-blue-200 to-purple-200"></div>
-            <div className="hidden md:block absolute top-16 left-2/3 right-0 h-0.5 bg-gradient-to-r from-purple-200 to-green-200"></div>
-            
+        <div className="max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             {steps.map((step, index) => (
-              <div key={index} className="relative text-center">
-                <div className={`inline-flex p-6 rounded-2xl bg-gradient-to-br ${step.color} text-white mb-6 shadow-lg relative z-10`}>
+              <div key={index} className="text-center group">
+                {/* Step Number */}
+                <div className="text-6xl font-bold text-gray-100 mb-4 group-hover:text-gray-200 transition-colors">
+                  {step.number}
+                </div>
+                
+                {/* Icon */}
+                <div className="flex items-center justify-center w-16 h-16 bg-black text-white rounded-lg mb-6 mx-auto group-hover:bg-gray-800 transition-colors">
                   <step.icon className="w-8 h-8" />
                 </div>
                 
-                <div className="absolute top-3 left-1/2 transform -translate-x-1/2 w-8 h-8 bg-white rounded-full flex items-center justify-center text-sm font-bold text-gray-600 shadow-md z-20">
-                  {index + 1}
-                </div>
-                
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">
+                {/* Content */}
+                <h3 className="text-2xl font-semibold text-black mb-4">
                   {step.title}
                 </h3>
                 
-                <p className="text-gray-600 leading-relaxed">
+                <p className="text-gray-600 leading-relaxed max-w-sm mx-auto">
                   {step.description}
                 </p>
               </div>

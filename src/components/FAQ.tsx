@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Minus } from 'lucide-react';
 
 export const FAQ: React.FC = () => {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
@@ -36,10 +36,10 @@ export const FAQ: React.FC = () => {
   ];
 
   return (
-    <section id="faq" className="py-20 bg-white">
-      <div className="container mx-auto px-4">
+    <section id="faq" className="py-24 bg-gray-50">
+      <div className="max-w-4xl mx-auto px-6">
         <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+          <h2 className="text-4xl md:text-5xl font-bold text-black mb-4">
             Frequently Asked Questions
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
@@ -47,29 +47,31 @@ export const FAQ: React.FC = () => {
           </p>
         </div>
         
-        <div className="max-w-3xl mx-auto">
+        <div className="space-y-4">
           {faqs.map((faq, index) => (
             <div
               key={index}
-              className="mb-4 bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow duration-200"
+              className="vercel-card overflow-hidden"
             >
               <button
-                className="w-full px-6 py-5 text-left flex items-center justify-between hover:bg-gray-50 transition-colors duration-200"
+                className="w-full px-6 py-5 text-left flex items-center justify-between hover:bg-gray-50 transition-colors duration-200 focus-ring"
                 onClick={() => setOpenIndex(openIndex === index ? null : index)}
               >
-                <span className="font-semibold text-gray-900 pr-4">
+                <span className="font-medium text-black pr-4 text-lg">
                   {faq.question}
                 </span>
-                {openIndex === index ? (
-                  <ChevronUp className="w-5 h-5 text-gray-500 flex-shrink-0" />
-                ) : (
-                  <ChevronDown className="w-5 h-5 text-gray-500 flex-shrink-0" />
-                )}
+                <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center">
+                  {openIndex === index ? (
+                    <Minus className="w-4 h-4 text-gray-600" />
+                  ) : (
+                    <Plus className="w-4 h-4 text-gray-600" />
+                  )}
+                </div>
               </button>
               
               {openIndex === index && (
-                <div className="px-6 pb-5">
-                  <p className="text-gray-600 leading-relaxed">
+                <div className="px-6 pb-5 border-t border-gray-100">
+                  <p className="text-gray-600 leading-relaxed pt-4">
                     {faq.answer}
                   </p>
                 </div>
