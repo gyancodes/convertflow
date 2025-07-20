@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { FileImage, Github, Twitter, Menu, X } from 'lucide-react';
 
-export const Navigation: React.FC = () => {
+interface NavigationProps {
+  onDocsClick?: () => void;
+}
+
+export const Navigation: React.FC<NavigationProps> = ({ onDocsClick }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Close mobile menu when clicking outside or on escape key
@@ -43,11 +47,12 @@ export const Navigation: React.FC = () => {
     setIsMobileMenuOpen(false);
   };
 
-  const navLinks = [
+  const navLinks: Array<{ href: string; label: string; external?: boolean; onClick?: () => void }> = [
     { href: '#features', label: 'Features' },
     { href: '#how-it-works', label: 'How it Works' },
     { href: '#converter', label: 'Converter' },
     { href: '#faq', label: 'FAQ' },
+    { href: '/docs', label: 'Docs', onClick: onDocsClick },
   ];
 
   return (
@@ -68,13 +73,24 @@ export const Navigation: React.FC = () => {
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
               {navLinks.map((link) => (
-                <a 
-                  key={link.href}
-                  href={link.href} 
-                  className="text-gray-600 hover:text-black transition-colors text-sm font-medium"
-                >
-                  {link.label}
-                </a>
+                link.onClick ? (
+                  <button
+                    key={link.href}
+                    onClick={link.onClick}
+                    className="text-gray-600 hover:text-black transition-colors text-sm font-medium"
+                  >
+                    {link.label}
+                  </button>
+                ) : (
+                  <a 
+                    key={link.href}
+                    href={link.href} 
+                    className="text-gray-600 hover:text-black transition-colors text-sm font-medium"
+                    {...(link.external && { target: '_blank', rel: 'noopener noreferrer' })}
+                  >
+                    {link.label}
+                  </a>
+                )
               ))}
             </div>
             
@@ -140,14 +156,28 @@ export const Navigation: React.FC = () => {
               <div className="flex-1 py-6">
                 <nav className="space-y-1">
                   {navLinks.map((link) => (
-                    <a
-                      key={link.href}
-                      href={link.href}
-                      className="block px-6 py-3 text-gray-700 hover:text-black hover:bg-gray-50 transition-colors font-medium"
-                      onClick={closeMobileMenu}
-                    >
-                      {link.label}
-                    </a>
+                    link.onClick ? (
+                      <button
+                        key={link.href}
+                        onClick={() => {
+                          link.onClick!();
+                          closeMobileMenu();
+                        }}
+                        className="block w-full text-left px-6 py-3 text-gray-700 hover:text-black hover:bg-gray-50 transition-colors font-medium"
+                      >
+                        {link.label}
+                      </button>
+                    ) : (
+                      <a
+                        key={link.href}
+                        href={link.href}
+                        className="block px-6 py-3 text-gray-700 hover:text-black hover:bg-gray-50 transition-colors font-medium"
+                        onClick={closeMobileMenu}
+                        {...(link.external && { target: '_blank', rel: 'noopener noreferrer' })}
+                      >
+                        {link.label}
+                      </a>
+                    )
                   ))}
                 </nav>
               </div>
