@@ -5,6 +5,7 @@ import { FileUpload } from './FileUpload';
 import { ConfigurationPanel } from './ConfigurationPanel';
 import { ProcessingProgress as ProcessingProgressComponent } from './ProcessingProgress';
 import { PreviewComparison } from './PreviewComparison';
+import { MemoryMonitor } from './MemoryMonitor';
 import ErrorDisplay from './ErrorDisplay';
 import ErrorBoundary from './ErrorBoundary';
 import { ImageProcessor } from '../../services/imageProcessor';
@@ -12,6 +13,8 @@ import { Vectorizer } from '../../services/vectorizer';
 import { SvgGenerator } from '../../services/svgGenerator';
 import { ColorQuantizer } from '../../services/colorQuantizer';
 import { EdgeDetector } from '../../services/edgeDetector';
+import { getWorkerManager } from '../../services/workerManager';
+import { PerformanceMonitor } from '../../utils/performanceMonitor';
 import { 
   withFileValidation, 
   withImageProcessing, 
@@ -66,6 +69,8 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
   const [completedJob, setCompletedJob] = useState<ConversionJob | null>(null);
   const [currentError, setCurrentError] = useState<ConversionError | null>(null);
   const [browserCompatibilityError, setBrowserCompatibilityError] = useState<ConversionError | null>(null);
+  const [memoryWarnings, setMemoryWarnings] = useState<string[]>([]);
+  const [useWebWorker, setUseWebWorker] = useState(true);
 
   // Service instances
   const imageProcessorRef = useRef<ImageProcessor>();
@@ -73,6 +78,8 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
   const svgGeneratorRef = useRef<SvgGenerator>();
   const colorQuantizerRef = useRef<ColorQuantizer>();
   const edgeDetectorRef = useRef<EdgeDetector>();
+  const performanceMonitorRef = useRef<PerformanceMonitor>();
+  const workerManagerRef = useRef(getWorkerManager());
 
   // Check browser compatibility on mount
   React.useEffect(() => {
@@ -82,10 +89,18 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
     }
   }, []);
 
-  // Initialize services
+  // Initialize services with performance optimizations
   const initializeServices = useCallback(() => {
     if (!imageProcessorRef.current) {
-      imageProcessorRef.current = new ImageProcessor();
+      // Initialize with optimized settings based on system capabilities
+      const memoryLimit = navigator.deviceMemory ? 
+        Math.min(navigator.deviceMemory * 16 * 1024 * 1024, 100 * 1024 * 1024) : // Use device memory info if available
+        50 * 1024 * 1024; // Default 50MB limit
+      
+      imageProcessorRef.current = new ImageProcessor({
+        maxDimensions: { width: 1024, height: 1024 }, // Reduced for better performance
+        memoryLimit
+      });
     }
     if (!vectorizerRef.current) {
       vectorizerRef.current = new Vectorizer({
@@ -105,6 +120,9 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
     }
     if (!edgeDetectorRef.current) {
       edgeDetectorRef.current = new EdgeDetector();
+    }
+    if (!performanceMonitorRef.current) {
+      performanceMonitorRef.current = new PerformanceMonitor();
     }
   }, [converterState.globalConfig]);
 
@@ -453,7 +471,7 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
     }));
   }, []);
 
-  // Main processing function
+  // Enhanced processing function with Web Worker support
   const processJob = useCallback(async (job: ConversionJob) => {
     initializeServices();
     
@@ -468,10 +486,50 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
       )
     }));
 
+    // Clear previous memory warnings
+    setMemoryWarnings([]);
+
     try {
-      const result = await processImageWithConfig(job.file, job.config);
+      let result: ProcessingResult;
+
+      // Try Web Worker processing first if enabled and supported
+      if (useWebWorker && workerManagerRef.current.isWorkerSupported()) {
+        try {
+          // Extract image data for worker processing
+          const imageData = await imageProcessorRef.current!.extractImageData(job.file);
+          
+          // Process in Web Worker with progress updates
+          result = await workerManagerRef.current.processImage(
+            imageData,
+            job.config,
+            (progress: number, stage: string) => {
+              setCurrentProgress({
+                stage: stage as any,
+                progress,
+                message: `${stage}: ${Math.round(progress)}%`
+              });
+            }
+          );
+        } catch (workerError) {
+          console.warn('Web Worker processing failed, falling back to main thread:', workerError);
+          // Fall back to main thread processing
+          result = await processImageWithConfig(job.file, job.config);
+        }
+      } else {
+        // Process in main thread
+        result = await processImageWithConfig(job.file, job.config);
+      }
+
       updateJobResult(job.id, result);
       setCompletedJob({ ...job, result, status: 'completed' });
+
+      // Generate performance report
+      if (performanceMonitorRef.current) {
+        const imageData = await imageProcessorRef.current!.extractImageData(job.file);
+        const report = performanceMonitorRef.current.generateReport(imageData, result);
+        console.log('Performance Report:\n', report);
+      }
+
     } catch (error) {
       const recovered = await handleProcessingError(error as Error, job);
       if (!recovered) {
@@ -484,7 +542,7 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
         currentJob: null
       }));
     }
-  }, [initializeServices, processImageWithConfig, handleProcessingError, updateJobResult]);
+  }, [initializeServices, processImageWithConfig, handleProcessingError, updateJobResult, useWebWorker]);
 
   // Event handlers with error handling
   const handleFilesSelected = useCallback(async (files: File[]) => {
@@ -601,6 +659,32 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
     setCurrentError(null);
   }, []);
 
+  // Memory warning handler
+  const handleMemoryWarning = useCallback((warning: string) => {
+    setMemoryWarnings(prev => {
+      if (!prev.includes(warning)) {
+        return [...prev, warning];
+      }
+      return prev;
+    });
+  }, []);
+
+  // Performance settings handlers
+  const handleToggleWebWorker = useCallback(() => {
+    setUseWebWorker(prev => !prev);
+  }, []);
+
+  const handleOptimizeForPerformance = useCallback(() => {
+    const optimizedConfig: VectorizationConfig = {
+      ...converterState.globalConfig,
+      colorCount: Math.min(converterState.globalConfig.colorCount, 16),
+      pathSimplification: Math.max(converterState.globalConfig.pathSimplification, 2.0),
+      smoothingLevel: 'low'
+    };
+    
+    handleConfigChange(optimizedConfig);
+  }, [converterState.globalConfig, handleConfigChange]);
+
   return (
     <ErrorBoundary>
       <div className="png-to-svg-converter max-w-6xl mx-auto p-6 space-y-8">
@@ -630,6 +714,62 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
             showTechnicalDetails={false}
           />
         )}
+
+        {/* Memory Warnings */}
+        {memoryWarnings.length > 0 && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-center mb-2">
+              <svg className="w-5 h-5 text-yellow-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <h3 className="text-sm font-medium text-yellow-800">Performance Warnings</h3>
+            </div>
+            <ul className="text-sm text-yellow-700 space-y-1">
+              {memoryWarnings.map((warning, index) => (
+                <li key={index}>• {warning}</li>
+              ))}
+            </ul>
+            <div className="mt-3 flex space-x-2">
+              <button
+                onClick={handleOptimizeForPerformance}
+                className="text-xs bg-yellow-600 text-white px-3 py-1 rounded hover:bg-yellow-700"
+              >
+                Optimize Settings
+              </button>
+              <button
+                onClick={() => setMemoryWarnings([])}
+                className="text-xs bg-gray-600 text-white px-3 py-1 rounded hover:bg-gray-700"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Performance Settings */}
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+          <h3 className="text-sm font-medium text-gray-900 mb-3">Performance Settings</h3>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={useWebWorker}
+                  onChange={handleToggleWebWorker}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="ml-2 text-sm text-gray-700">
+                  Use Web Worker {workerManagerRef.current.isWorkerSupported() ? '(Supported)' : '(Not Supported)'}
+                </span>
+              </label>
+            </div>
+            <MemoryMonitor
+              isProcessing={converterState.isProcessing}
+              onMemoryWarning={handleMemoryWarning}
+              className="flex-shrink-0"
+            />
+          </div>
+        </div>
 
       {/* Configuration Panel */}
       <ConfigurationPanel
