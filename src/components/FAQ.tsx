@@ -6,32 +6,52 @@ export const FAQ: React.FC = () => {
 
   const faqs = [
     {
-      question: 'What is the difference between PNG and SVG?',
-      answer: 'PNG is a raster image format made of pixels, while SVG is a vector format made of mathematical descriptions. SVG files are scalable without quality loss and often smaller in file size.'
+      question: 'How does PNG to SVG conversion work?',
+      answer: 'Our converter uses advanced vectorization algorithms to trace the edges and shapes in your PNG image, then converts them into scalable vector paths. You can choose between different algorithms optimized for logos, photos, or line art to get the best results for your specific image type.'
     },
     {
-      question: 'Will the conversion affect image quality?',
-      answer: 'Our conversion process embeds the original PNG data within the SVG container, preserving 100% of the original image quality while adding scalability benefits.'
+      question: 'What types of PNG images work best?',
+      answer: 'Simple graphics, logos, icons, and line art typically convert best to SVG format. Complex photographs may not vectorize as effectively, but our "photo" algorithm can still create good results. Images with clear edges and solid colors generally produce the cleanest SVG output.'
     },
     {
-      question: 'Is there a file size limit?',
-      answer: 'Yes, we support files up to 10MB per image. This covers most use cases while ensuring optimal performance in your browser.'
+      question: 'Can I adjust the conversion settings?',
+      answer: 'Yes! You can customize color count (2-256 colors), smoothing level, path simplification, and choose between different processing algorithms. The "Auto" mode detects the best settings for your image, while manual settings give you full control over the output quality and file size.'
     },
     {
-      question: 'Are my files uploaded to your servers?',
-      answer: 'No, all processing happens locally in your browser. Your files never leave your device, ensuring complete privacy and security.'
+      question: 'Will my transparent PNG backgrounds be preserved?',
+      answer: 'Absolutely! Our converter fully supports PNG transparency and preserves alpha channel information in the output SVG. You can enable or disable transparency preservation in the settings based on your needs.'
     },
     {
-      question: 'Can I convert multiple files at once?',
-      answer: 'Absolutely! You can select multiple PNG files at once or drag and drop them together. All files will be converted simultaneously.'
+      question: 'How large can my PNG files be?',
+      answer: 'We support PNG files up to 10MB each, with a maximum of 20 files per batch. For optimal performance, we recommend keeping images under 4096x4096 pixels. Larger images are automatically resized to prevent browser memory issues.'
     },
     {
-      question: 'What browsers are supported?',
-      answer: 'ConvertFlow works on all modern browsers including Chrome, Firefox, Safari, and Edge. No plugins or extensions required.'
+      question: 'Is my data secure and private?',
+      answer: 'Yes, completely! All image processing happens entirely in your browser using client-side JavaScript. Your files never leave your device or get uploaded to any server. This ensures 100% privacy and security for your images.'
     },
     {
-      question: 'Is ConvertFlow really free?',
-      answer: 'Yes, ConvertFlow is completely free to use with no hidden costs, registration requirements, or usage limits.'
+      question: 'What browsers and devices are supported?',
+      answer: 'ConvertFlow works on all modern browsers including Chrome, Firefox, Safari, and Edge on desktop and mobile devices. No plugins, extensions, or downloads required - just open the website and start converting.'
+    },
+    {
+      question: 'Can I use the converted SVGs commercially?',
+      answer: 'Yes! The SVG files you create are yours to use however you like, including commercial projects. However, make sure you have the rights to use the original PNG images you\'re converting.'
+    },
+    {
+      question: 'Why choose SVG over PNG?',
+      answer: 'SVG files are infinitely scalable without quality loss, often smaller in file size, editable with code or design tools, SEO-friendly, and perfect for responsive web design. They\'re ideal for logos, icons, and simple graphics that need to look crisp at any size.'
+    },
+    {
+      question: 'What if the conversion doesn\'t look right?',
+      answer: 'Try adjusting the settings! Increase color count for more detail, change the algorithm (shapes/photo/lineart), or adjust path simplification. For complex images, the "photo" algorithm with higher color count usually works best. Simple graphics work well with the "shapes" algorithm.'
+    },
+    {
+      question: 'Is there a limit to how many files I can convert?',
+      answer: 'No limits! ConvertFlow is completely free with no usage restrictions, account requirements, or hidden fees. Convert as many files as you need, whenever you need them.'
+    },
+    {
+      question: 'Can I batch convert multiple files?',
+      answer: 'Yes! You can select up to 20 PNG files at once for batch conversion. Each file is processed individually with the same settings, and you can download them all together or individually as needed.'
     }
   ];
 
@@ -42,8 +62,9 @@ export const FAQ: React.FC = () => {
           <h2 className="text-4xl md:text-5xl font-bold text-black mb-4">
             Frequently Asked Questions
           </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Everything you need to know about PNG to SVG conversion
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            Get answers to common questions about our PNG to SVG converter, 
+            vectorization algorithms, and how to get the best results
           </p>
         </div>
         
