@@ -800,17 +800,7 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
 
   return (
     <ErrorBoundary>
-      <div className="png-to-svg-converter max-w-6xl mx-auto p-6 space-y-8">
-        {/* Header */}
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            PNG to SVG Converter
-          </h1>
-          <p className="text-gray-600">
-            Convert your PNG images to scalable vector graphics with advanced
-            vectorization algorithms
-          </p>
-        </div>
+      <div className="png-to-svg-converter space-y-12">
 
         {/* Browser Compatibility Error */}
         {browserCompatibilityError && (
@@ -833,7 +823,7 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
 
         {/* Memory Warnings */}
         {memoryWarnings.length > 0 && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="vercel-card p-4 border-l-4 border-yellow-400 bg-yellow-50">
             <div className="flex items-center mb-2">
               <svg
                 className="w-5 h-5 text-yellow-600 mr-2"
@@ -858,13 +848,13 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
             <div className="mt-3 flex space-x-2">
               <button
                 onClick={handleOptimizeForPerformance}
-                className="text-xs bg-yellow-600 text-white px-3 py-1 rounded hover:bg-yellow-700"
+                className="btn-secondary text-xs px-3 py-1 rounded-md"
               >
                 Optimize Settings
               </button>
               <button
                 onClick={() => setMemoryWarnings([])}
-                className="text-xs bg-gray-600 text-white px-3 py-1 rounded hover:bg-gray-700"
+                className="btn-secondary text-xs px-3 py-1 rounded-md"
               >
                 Dismiss
               </button>
@@ -873,8 +863,8 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
         )}
 
         {/* Performance Settings */}
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-          <h3 className="text-sm font-medium text-gray-900 mb-3">
+        <div className="vercel-card p-6">
+          <h3 className="text-lg font-semibold text-black mb-4">
             Performance Settings
           </h3>
           <div className="flex items-center justify-between">
@@ -884,13 +874,15 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
                   type="checkbox"
                   checked={useWebWorker}
                   onChange={handleToggleWebWorker}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="rounded border-gray-300 text-black focus-ring"
                 />
-                <span className="ml-2 text-sm text-gray-700">
+                <span className="ml-3 text-sm text-gray-700">
                   Use Web Worker{" "}
-                  {workerManagerRef.current.isWorkerSupported()
-                    ? "(Supported)"
-                    : "(Not Supported)"}
+                  <span className="text-gray-500">
+                    {workerManagerRef.current.isWorkerSupported()
+                      ? "(Supported)"
+                      : "(Not Supported)"}
+                  </span>
                 </span>
               </label>
             </div>
@@ -902,55 +894,90 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
           </div>
         </div>
 
-        {/* Configuration Panel */}
-        <ConfigurationPanel
-          config={converterState.globalConfig}
-          onChange={handleConfigChange}
-          disabled={converterState.isProcessing}
-        />
-
-        {/* File Upload */}
-        <FileUpload
-          onFilesSelected={handleFilesSelected}
-          isProcessing={converterState.isProcessing}
-          maxFiles={maxBatchSize}
-        />
-
-        {/* Processing Controls */}
-        {converterState.files.length > 0 &&
-          !converterState.isProcessing &&
-          !completedJob && (
-            <div className="flex justify-center space-x-4">
-              <button
-                onClick={handleStartProcessing}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                disabled={
-                  !converterState.files.some((job) => job.status === "pending")
-                }
-              >
-                Start Conversion
-              </button>
-              <button
-                onClick={handleReset}
-                className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-              >
-                Reset
-              </button>
+        {/* Step 1: Configuration */}
+        <div className="space-y-4">
+          <div className="text-center">
+            <div className="inline-flex items-center justify-center w-8 h-8 bg-black text-white rounded-full text-sm font-medium mb-2">
+              1
             </div>
-          )}
-
-        {/* Processing Progress */}
-        {converterState.isProcessing && (
-          <ProcessingProgressComponent
-            progress={currentProgress}
-            isProcessing={converterState.isProcessing}
-            onCancel={handleCancelProcessing}
+            <h3 className="text-lg font-semibold text-black">Configure Settings</h3>
+            <p className="text-gray-600">Adjust conversion parameters for optimal results</p>
+          </div>
+          <ConfigurationPanel
+            config={converterState.globalConfig}
+            onChange={handleConfigChange}
+            disabled={converterState.isProcessing}
           />
+        </div>
+
+        {/* Step 2: File Upload */}
+        <div className="space-y-4">
+          <div className="text-center">
+            <div className="inline-flex items-center justify-center w-8 h-8 bg-black text-white rounded-full text-sm font-medium mb-2">
+              2
+            </div>
+            <h3 className="text-lg font-semibold text-black">Upload Files</h3>
+            <p className="text-gray-600">Select your PNG images to convert</p>
+          </div>
+          <FileUpload
+            onFilesSelected={handleFilesSelected}
+            isProcessing={converterState.isProcessing}
+            maxFiles={maxBatchSize}
+          />
+        </div>
+
+        {/* Step 3: Process */}
+        {converterState.files.length > 0 && (
+          <div className="space-y-6">
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center w-8 h-8 bg-black text-white rounded-full text-sm font-medium mb-2">
+                3
+              </div>
+              <h3 className="text-lg font-semibold text-black">Convert</h3>
+              <p className="text-gray-600">Process your images to SVG format</p>
+            </div>
+
+            {!converterState.isProcessing && !completedJob && (
+              <div className="flex justify-center space-x-4">
+                <button
+                  onClick={handleStartProcessing}
+                  className="btn-primary px-8 py-3 rounded-lg font-medium"
+                  disabled={
+                    !converterState.files.some((job) => job.status === "pending")
+                  }
+                >
+                  Start Conversion
+                </button>
+                <button
+                  onClick={handleReset}
+                  className="btn-secondary px-8 py-3 rounded-lg font-medium"
+                >
+                  Reset
+                </button>
+              </div>
+            )}
+
+            {converterState.isProcessing && (
+              <ProcessingProgressComponent
+                progress={currentProgress}
+                isProcessing={converterState.isProcessing}
+                onCancel={handleCancelProcessing}
+              />
+            )}
+          </div>
         )}
 
-        {/* Preview and Results */}
+        {/* Step 4: Results */}
         {completedJob?.result && (
           <div className="space-y-6">
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center w-8 h-8 bg-green-600 text-white rounded-full text-sm font-medium mb-2">
+                ✓
+              </div>
+              <h3 className="text-lg font-semibold text-black">Conversion Complete</h3>
+              <p className="text-gray-600">Your SVG is ready for download</p>
+            </div>
+
             <PreviewComparison
               originalFile={completedJob.file}
               result={completedJob.result}
@@ -960,13 +987,13 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
             <div className="flex justify-center space-x-4">
               <button
                 onClick={handleDownload}
-                className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                className="btn-primary px-8 py-3 rounded-lg font-medium"
               >
                 Download SVG
               </button>
               <button
                 onClick={handleReset}
-                className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                className="btn-secondary px-8 py-3 rounded-lg font-medium"
               >
                 Convert Another
               </button>
@@ -976,7 +1003,7 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
 
         {/* Legacy Error Display for Failed Jobs */}
         {completedJob?.status === "failed" && !currentError && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+          <div className="vercel-card p-6 border-l-4 border-red-400 bg-red-50">
             <h3 className="text-lg font-semibold text-red-800 mb-2">
               Conversion Failed
             </h3>
@@ -984,13 +1011,13 @@ export const PngToSvgConverter: React.FC<PngToSvgConverterProps> = ({
             <div className="flex space-x-4">
               <button
                 onClick={() => processJob(completedJob)}
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                className="btn-primary px-4 py-2 rounded-lg text-sm"
               >
                 Retry
               </button>
               <button
                 onClick={handleReset}
-                className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+                className="btn-secondary px-4 py-2 rounded-lg text-sm"
               >
                 Start Over
               </button>

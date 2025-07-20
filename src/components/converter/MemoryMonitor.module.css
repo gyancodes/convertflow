@@ -35,7 +35,20 @@
 .icon {
   display: flex;
   align-items: center;
-  opacity: 0.7;
+  opacity: 0.8;
+  color: #007bff;
+}
+
+.memoryMonitor.warning .icon {
+  color: #ffc107;
+}
+
+.memoryMonitor.critical .icon {
+  color: #dc3545;
+}
+
+.memoryMonitor.unsupported .icon {
+  color: #6c757d;
 }
 
 .title {
@@ -106,4 +119,9 @@
 
 .warning svg {
   flex-shrink: 0;
+  color: #ffc107;
+}
+
+.memoryMonitor.critical .warning svg {
+  color: #dc3545;
 }

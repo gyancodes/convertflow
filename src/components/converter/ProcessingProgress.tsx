@@ -49,16 +49,16 @@ export const ProcessingProgress: React.FC<ProcessingProgressProps> = ({
   };
 
   return (
-    <div className="processing-progress bg-white rounded-lg shadow-lg p-6 max-w-md mx-auto">
+    <div className="vercel-card p-8 max-w-lg mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-800">
+      <div className="flex items-center justify-between mb-8">
+        <h3 className="text-xl font-semibold text-black">
           Converting to SVG
         </h3>
         {onCancel && isProcessing && (
           <button
             onClick={onCancel}
-            className="text-sm text-gray-500 hover:text-red-600 transition-colors"
+            className="text-sm text-gray-500 hover:text-black transition-colors px-3 py-1 hover:bg-gray-100 rounded-md"
             aria-label="Cancel processing"
           >
             Cancel
@@ -67,23 +67,23 @@ export const ProcessingProgress: React.FC<ProcessingProgressProps> = ({
       </div>
 
       {/* Stage Indicators */}
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-2">
+      <div className="mb-8">
+        <div className="flex justify-between items-center mb-4">
           {STAGE_ORDER.map((stage, index) => {
             const status = getStageStatus(index);
             return (
               <div key={stage} className="flex flex-col items-center">
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
+                  className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-200 ${
                     status === 'completed'
-                      ? 'bg-green-500 text-white'
+                      ? 'bg-black text-white'
                       : status === 'active'
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-200 text-gray-500'
+                      ? 'bg-gray-800 text-white animate-pulse'
+                      : 'bg-gray-100 text-gray-400'
                   }`}
                 >
                   {status === 'completed' ? (
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                       <path
                         fillRule="evenodd"
                         d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
@@ -94,7 +94,7 @@ export const ProcessingProgress: React.FC<ProcessingProgressProps> = ({
                     index + 1
                   )}
                 </div>
-                <span className="text-xs text-gray-600 mt-1 text-center max-w-16">
+                <span className="text-xs text-gray-600 mt-2 text-center max-w-20 leading-tight">
                   {STAGE_LABELS[stage]}
                 </span>
               </div>
@@ -103,10 +103,10 @@ export const ProcessingProgress: React.FC<ProcessingProgressProps> = ({
         </div>
         
         {/* Progress Line */}
-        <div className="relative mt-4">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gray-200 rounded"></div>
+        <div className="relative mt-6">
+          <div className="absolute top-0 left-0 w-full h-2 bg-gray-100 rounded-full"></div>
           <div
-            className="absolute top-0 left-0 h-1 bg-blue-500 rounded transition-all duration-300"
+            className="absolute top-0 left-0 h-2 bg-black rounded-full transition-all duration-300"
             style={{
               width: `${((currentStageIndex + progress.progress / 100) / STAGE_ORDER.length) * 100}%`
             }}
@@ -115,38 +115,38 @@ export const ProcessingProgress: React.FC<ProcessingProgressProps> = ({
       </div>
 
       {/* Current Stage Progress */}
-      <div className="mb-4">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-sm font-medium text-gray-700">
+      <div className="mb-6">
+        <div className="flex justify-between items-center mb-3">
+          <span className="text-sm font-medium text-black">
             {STAGE_LABELS[progress.stage]}
           </span>
-          <span className="text-sm text-gray-500">
+          <span className="text-sm font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded">
             {Math.round(progress.progress)}%
           </span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
+        <div className="w-full bg-gray-100 rounded-full h-3">
           <div
-            className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+            className="bg-black h-3 rounded-full transition-all duration-300"
             style={{ width: `${progress.progress}%` }}
           ></div>
         </div>
       </div>
 
       {/* Status Message and Time Remaining */}
-      <div className="space-y-2">
-        <p className="text-sm text-gray-600">{progress.message}</p>
+      <div className="space-y-3 text-center">
+        <p className="text-gray-600">{progress.message}</p>
         {progress.estimatedTimeRemaining && (
-          <p className="text-sm text-blue-600 font-medium">
+          <p className="text-sm text-black font-medium">
             {formatTimeRemaining(progress.estimatedTimeRemaining)}
           </p>
         )}
       </div>
 
       {/* Overall Progress */}
-      <div className="mt-4 pt-4 border-t border-gray-100">
-        <div className="flex justify-between items-center text-sm">
-          <span className="text-gray-600">Overall Progress</span>
-          <span className="font-medium text-gray-800">
+      <div className="mt-6 pt-6 border-t border-gray-100">
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-gray-600">Overall Progress</span>
+          <span className="text-sm font-medium text-black">
             {Math.round(((currentStageIndex + progress.progress / 100) / STAGE_ORDER.length) * 100)}%
           </span>
         </div>

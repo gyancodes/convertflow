@@ -108,10 +108,10 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     <div className="w-full max-w-4xl mx-auto">
       <div
         className={`
-          relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300
+          relative border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-200
           ${isDragOver 
-            ? 'border-blue-400 bg-blue-50 scale-[1.02]' 
-            : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
+            ? 'border-black bg-gray-50 scale-[1.01]' 
+            : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
           }
           ${isProcessing ? 'opacity-50 pointer-events-none' : 'cursor-pointer'}
         `}
@@ -130,27 +130,35 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           disabled={isProcessing}
         />
         
-        <div className="flex flex-col items-center space-y-4">
-          <div className={`p-4 rounded-full transition-colors duration-300 ${
-            isDragOver ? 'bg-blue-100' : 'bg-gray-100'
+        <div className="flex flex-col items-center space-y-6">
+          <div className={`p-6 rounded-2xl transition-all duration-200 ${
+            isDragOver ? 'bg-black text-white scale-110' : 'bg-gray-100 text-gray-600'
           }`}>
             {isDragOver ? (
-              <FileImage className="w-8 h-8 text-blue-500" />
+              <FileImage className="w-12 h-12" />
             ) : (
-              <Upload className="w-8 h-8 text-gray-500" />
+              <Upload className="w-12 h-12" />
             )}
           </div>
           
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          <div className="space-y-4">
+            <h3 className="text-2xl font-semibold text-black">
               {isDragOver ? 'Drop your PNG files here' : 'Upload PNG Images'}
             </h3>
-            <p className="text-gray-600 mb-4">
+            <p className="text-lg text-gray-600 max-w-md mx-auto">
               Drag and drop your PNG files here, or click to browse
             </p>
-            <p className="text-sm text-gray-500">
-              Supports up to {maxFiles} files • Max {Math.round(maxFileSize / (1024 * 1024))}MB per file • PNG format only
-            </p>
+            <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-gray-500">
+              <span className="px-3 py-1 bg-gray-100 rounded-full">
+                Up to {maxFiles} files
+              </span>
+              <span className="px-3 py-1 bg-gray-100 rounded-full">
+                Max {Math.round(maxFileSize / (1024 * 1024))}MB each
+              </span>
+              <span className="px-3 py-1 bg-gray-100 rounded-full">
+                PNG only
+              </span>
+            </div>
           </div>
         </div>
         
@@ -166,47 +174,49 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       
       {/* Selected Files Display */}
       {selectedFiles.length > 0 && (
-        <div className="mt-6">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-md font-medium text-gray-900">
+        <div className="mt-8">
+          <div className="flex items-center justify-between mb-6">
+            <h4 className="text-lg font-semibold text-black">
               Selected Files ({selectedFiles.length})
             </h4>
             <button
               onClick={clearFiles}
-              className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+              className="text-sm text-gray-500 hover:text-black transition-colors px-3 py-1 hover:bg-gray-100 rounded-md"
               disabled={isProcessing}
             >
               Clear All
             </button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {selectedFiles.map((file, index) => (
               <div
                 key={`${file.name}-${index}`}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border"
+                className="vercel-card p-4 group hover:shadow-md transition-all duration-200"
               >
                 <div className="flex items-center space-x-3 min-w-0 flex-1">
-                  <FileImage className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                  <div className="flex-shrink-0 w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center group-hover:bg-black group-hover:text-white transition-all duration-200">
+                    <FileImage className="w-5 h-5" />
+                  </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-gray-900 truncate">
+                    <p className="text-sm font-medium text-black truncate">
                       {file.name}
                     </p>
                     <p className="text-xs text-gray-500">
                       {formatFileSize(file.size)}
                     </p>
                   </div>
+                  {!isProcessing && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeFile(file);
+                      }}
+                      className="flex-shrink-0 p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-all duration-200"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
-                {!isProcessing && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeFile(file);
-                    }}
-                    className="ml-2 p-1 text-gray-400 hover:text-red-500 transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
               </div>
             ))}
           </div>

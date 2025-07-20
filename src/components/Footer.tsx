@@ -19,19 +19,13 @@ export const Footer: React.FC = () => {
             </p>
             <div className="flex items-center space-x-4">
               <a 
-                href="#" 
+                href="https://github.com/gyancodes/convertflow" 
                 className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-gray-900 rounded-md"
                 aria-label="GitHub"
               >
                 <Github className="w-5 h-5" />
               </a>
-              <a 
-                href="#" 
-                className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-gray-900 rounded-md"
-                aria-label="Twitter"
-              >
-                <Twitter className="w-5 h-5" />
-              </a>
+             
             </div>
           </div>
 

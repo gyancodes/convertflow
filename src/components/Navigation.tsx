@@ -35,20 +35,13 @@ export const Navigation: React.FC = () => {
           {/* Right side */}
           <div className="flex items-center space-x-4">
             <a 
-              href="#" 
+              href="https://github.com/gyancodes/convertflow" 
               className="text-gray-600 hover:text-black transition-colors p-2 hover:bg-gray-100 rounded-md"
               aria-label="GitHub"
             >
               <Github className="w-5 h-5" />
             </a>
-            <a 
-              href="#" 
-              className="text-gray-600 hover:text-black transition-colors p-2 hover:bg-gray-100 rounded-md"
-              aria-label="Twitter"
-            >
-              <Twitter className="w-5 h-5" />
-            </a>
-            
+           
             {/* Mobile menu button */}
             <button className="md:hidden p-2 hover:bg-gray-100 rounded-md">
               <Menu className="w-5 h-5" />
