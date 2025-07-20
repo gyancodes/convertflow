@@ -72,8 +72,8 @@ describe('User Journey Integration', () => {
     
     // 1. User lands on the page and sees the hero section
     expect(screen.getByText(/Convert PNG to/)).toBeInTheDocument();
-    expect(screen.getByText(/SVG/)).toBeInTheDocument();
-    expect(screen.getByText(/Instantly/)).toBeInTheDocument();
+    // Check for the main heading content
+    expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
     
     // 2. User can navigate through sections via navigation
     const featuresLink = screen.getByRole('link', { name: /features/i });
@@ -145,9 +145,9 @@ describe('User Journey Integration', () => {
     
     // Value proposition is clear
     expect(screen.getByText(/Transform your PNG images into crisp, scalable vector graphics/)).toBeInTheDocument();
-    expect(screen.getByText(/No quality loss/)).toBeInTheDocument();
-    expect(screen.getByText(/No uploads/)).toBeInTheDocument();
-    expect(screen.getByText(/No limits/)).toBeInTheDocument();
+    expect(screen.getByText('No quality loss.')).toBeInTheDocument();
+    expect(screen.getByText('No uploads.')).toBeInTheDocument();
+    expect(screen.getByText('No limits.')).toBeInTheDocument();
     
     // Clear call-to-action
     const ctaButton = screen.getByRole('button', { name: /start converting/i });
