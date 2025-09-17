@@ -1,4 +1,4 @@
-export const convertPngToSvg = (file: File): Promise<string> => {
+export const convertImageToSvg = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
@@ -35,6 +35,9 @@ export const convertPngToSvg = (file: File): Promise<string> => {
   });
 };
 
+// Keep the old function name for backward compatibility
+export const convertPngToSvg = convertImageToSvg;
+
 export const downloadSvg = (svgContent: string, fileName: string) => {
   const blob = new Blob([svgContent], { type: "image/svg+xml" });
   const url = URL.createObjectURL(blob);
@@ -48,11 +51,11 @@ export const downloadSvg = (svgContent: string, fileName: string) => {
 };
 
 export const validateImageFile = (file: File): string | null => {
-  const validTypes = ["image/png"];
+  const validTypes = ["image/png", "image/jpeg", "image/jpg"];
   const maxSize = 10 * 1024 * 1024; // 10MB
 
   if (!validTypes.includes(file.type)) {
-    return "Please select a PNG file only.";
+    return "Please select a PNG or JPEG file only.";
   }
 
   if (file.size > maxSize) {

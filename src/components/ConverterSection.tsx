@@ -10,7 +10,7 @@ export const ConverterSection: React.FC = () => {
             Start Converting Now
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Upload your PNG files and watch them transform into scalable SVG format
+            Upload your PNG or JPEG files and watch them transform into scalable SVG format
           </p>
         </div>
         
