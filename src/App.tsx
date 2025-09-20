@@ -3,6 +3,7 @@ import { Navigation } from "./components/Navigation";
 import { Hero } from "./components/Hero";
 import { Features } from "./components/Features";
 import { HowItWorks } from "./components/HowItWorks";
+import { TechnicalSpecs } from "./components/TechnicalSpecs";
 import { ConverterSection } from "./components/ConverterSection";
 import { FAQ } from "./components/FAQ";
 import { Footer } from "./components/Footer";
@@ -67,6 +68,7 @@ function App() {
       <Hero onGetStarted={scrollToConverter} />
       <Features />
       <HowItWorks />
+      <TechnicalSpecs />
       <div ref={converterRef}>
         <ConverterSection />
       </div>

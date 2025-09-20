@@ -1,37 +1,37 @@
 import React from 'react';
-import { Upload, Download, Layers, Smartphone, Clock, Lock } from 'lucide-react';
+import { Upload, Download, Layers, Smartphone, Settings, RefreshCw, Zap, Shield } from 'lucide-react';
 
 export const Features: React.FC = () => {
   const features = [
     {
-      icon: Upload,
-      title: 'Drag & Drop Upload',
-      description: 'Simply drag your PNG files or click to browse. Supports multiple files at once.'
+      icon: Settings,
+      title: 'Dual Engine Selection',
+      description: 'Choose between Potrace for clean line art or ImageTracer for complex images with multiple colors.'
     },
     {
-      icon: Layers,
-      title: 'Quality Preservation',
-      description: 'Maintains original image quality while converting to scalable vector format.'
+      icon: Upload,
+      title: 'Batch Processing',
+      description: 'Upload multiple PNG and JPEG files simultaneously. Process dozens of images in one go.'
+    },
+    {
+      icon: RefreshCw,
+      title: 'Smart Error Recovery',
+      description: 'Automatic retry mechanism with exponential backoff. Manual retry options for failed conversions.'
+    },
+    {
+      icon: Zap,
+      title: 'Server-Side Processing',
+      description: 'Powerful backend processing ensures consistent results and handles large files efficiently.'
     },
     {
       icon: Download,
-      title: 'Instant Download',
-      description: 'Download individual files or batch download all converted SVGs at once.'
+      title: 'Flexible Downloads',
+      description: 'Download individual SVG files or batch download all converted files as a ZIP archive.'
     },
     {
-      icon: Smartphone,
-      title: 'Mobile Friendly',
-      description: 'Fully responsive design that works perfectly on all devices and screen sizes.'
-    },
-    {
-      icon: Clock,
-      title: 'No Time Limits',
-      description: 'Convert as many files as you need without any restrictions or time limits.'
-    },
-    {
-      icon: Lock,
-      title: 'Privacy First',
-      description: 'All processing happens locally in your browser. Your files never leave your device.'
+      icon: Shield,
+      title: 'Robust Architecture',
+      description: 'Built with modern web technologies, comprehensive error handling, and network resilience.'
     }
   ];
 
@@ -40,10 +40,10 @@ export const Features: React.FC = () => {
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-black mb-4 tracking-tight">
-            Why Choose ConvertFlow?
+            Professional-Grade Features
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Built with modern web technologies to provide the best PNG to SVG conversion experience.
+            Advanced dual-engine processing with intelligent error handling and robust server-side architecture for reliable image conversion.
           </p>
         </div>
         
