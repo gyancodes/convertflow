@@ -8,7 +8,6 @@ import { ConverterSection } from "./components/ConverterSection";
 import { FAQ } from "./components/FAQ";
 import { Footer } from "./components/Footer";
 import { Documentation } from "./components/Documentation";
-import { Analytics } from "@vercel/analytics/react";
 
 function App() {
   const converterRef = useRef<HTMLDivElement>(null);
@@ -55,7 +54,6 @@ function App() {
   if (currentView === 'docs') {
     return (
       <div className="min-h-screen">
-        <Analytics />
         <Documentation onBack={showHome} />
       </div>
     );
@@ -63,7 +61,6 @@ function App() {
 
   return (
     <div className="min-h-screen">
-      <Analytics />
       <Navigation onDocsClick={showDocs} />
       <Hero onGetStarted={scrollToConverter} />
       <Features />

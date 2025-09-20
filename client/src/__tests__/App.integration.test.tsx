@@ -40,10 +40,6 @@ vi.mock('../components/Footer', () => ({
   Footer: () => <div data-testid="footer">Footer</div>
 }));
 
-vi.mock('@vercel/analytics/react', () => ({
-  Analytics: () => null
-}));
-
 // Mock scrollIntoView
 const mockScrollIntoView = vi.fn();
 Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {

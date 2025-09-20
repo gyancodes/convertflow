@@ -9,11 +9,66 @@ const potrace = require('potrace');
 const ImageTracer = require('imagetracerjs');
 const path = require('path');
 const fs = require('fs').promises;
-const { createCanvas, loadImage, Image } = require('canvas');
 require('dotenv').config();
 
-// Polyfill Image for ImageTracer in Node.js environment
-global.Image = Image;
+// Polyfills for ImageTracer in Node.js environment
+global.Image = class {
+  constructor() {
+    this.onload = null;
+    this.onerror = null;
+    this.src = null;
+    this.width = 0;
+    this.height = 0;
+  }
+  
+  set src(value) {
+    this._src = value;
+    // Simulate immediate load for data URLs
+    if (this.onload && value && value.startsWith('data:')) {
+      // Extract dimensions from data URL if possible
+      this.width = 100; // Default width
+      this.height = 100; // Default height
+      setTimeout(() => this.onload(), 0);
+    }
+  }
+  
+  get src() {
+    return this._src;
+  }
+};
+
+// Simple document polyfill for ImageTracer
+global.document = {
+  createElement: function(tagName) {
+    if (tagName === 'canvas') {
+      return {
+        width: 0,
+        height: 0,
+        getContext: function(type) {
+          return {
+            createImageData: function(width, height) {
+              return {
+                data: new Uint8ClampedArray(width * height * 4),
+                width: width,
+                height: height
+              };
+            },
+            getImageData: function(x, y, width, height) {
+              return {
+                data: new Uint8ClampedArray(width * height * 4),
+                width: width,
+                height: height
+              };
+            },
+            putImageData: function() {},
+            drawImage: function() {}
+          };
+        }
+      };
+    }
+    return {};
+  }
+};
 
 const app = express();
 const PORT = process.env.PORT || 3001;

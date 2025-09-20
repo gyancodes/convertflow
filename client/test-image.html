@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Image Generator</title>
+</head>
+<body>
+    <h1>Test Image for Conversion</h1>
+    <canvas id="canvas" width="200" height="200" style="border: 1px solid black;"></canvas>
+    <br><br>
+    <button onclick="downloadImage()">Download Test Image</button>
+    
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Draw a simple test image
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(50, 50, 100, 100);
+        
+        ctx.fillStyle = '#00ff00';
+        ctx.beginPath();
+        ctx.arc(100, 100, 30, 0, 2 * Math.PI);
+        ctx.fill();
+        
+        ctx.fillStyle = '#0000ff';
+        ctx.fillRect(75, 75, 50, 20);
+        
+        function downloadImage() {
+            const link = document.createElement('a');
+            link.download = 'test-image.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+    </script>
+</body>
+</html>

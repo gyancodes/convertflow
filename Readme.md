@@ -1,153 +1,138 @@
-# ConvertFlow - Advanced PNG to SVG Converter
+# ConvertFlow - Image to SVG Converter
 
-🎨 **True Vectorization Technology**  
-A sophisticated web application that converts PNG images into scalable vector graphics using advanced computer vision algorithms.
+Advanced web application that converts PNG images into scalable vector graphics using computer vision algorithms.
 
----
+## Features
 
-## ✨ Features
+- **True Vector Conversion**: Converts raster images to actual vector paths
+- **Smart Color Quantization**: Intelligent color reduction with K-means clustering
+- **Batch Processing**: Convert multiple files simultaneously
+- **Client-Side Processing**: All processing happens locally - no uploads needed
+- **Real-time Preview**: Side-by-side comparison of original and converted images
+- **Web Workers**: Background processing for smooth UI performance
 
-### Core Conversion Capabilities
-- 🎯 **True Vector Conversion**: Advanced algorithms convert raster images to actual vector paths
-- 🎨 **Smart Color Quantization**: Intelligent color reduction with K-means clustering
-- 🔍 **Edge Detection**: Sophisticated edge detection for precise path generation
-- 📐 **Path Optimization**: Automatic path simplification and smoothing
-- 🌈 **Transparency Support**: Full alpha channel preservation
-- 🚀 **Multiple Algorithms**: Auto-selection based on image type (shapes, photos, line art)
+## Tech Stack
 
-### User Experience
-- 💫 **Batch Processing**: Convert multiple files simultaneously
-- 🔒 **100% Client-Side**: All processing happens locally - no uploads needed
-- 📊 **Real-time Progress**: Detailed progress tracking with stage indicators
-- 🖼️ **Live Preview**: Side-by-side comparison of original and converted images
-- 📱 **Responsive Design**: Optimized for all devices and screen sizes
-- ⚡ **Web Workers**: Background processing for smooth UI performance
-
-### Advanced Features
-- 🧠 **Memory Monitoring**: Real-time memory usage tracking and optimization
-- 🔧 **Configurable Settings**: Fine-tune conversion parameters
-- 📦 **Batch Download**: ZIP archive support for multiple files
-- 🛡️ **Error Recovery**: Intelligent fallback mechanisms
-- 📈 **Performance Analytics**: Built-in performance monitoring
-- 🎛️ **Algorithm Selection**: Choose optimal algorithm for your image type
-
-## 🏗️ Architecture
-
-### Tech Stack
-- **Frontend**: React 18 + TypeScript
-- **Build Tool**: Vite
-- **Styling**: Tailwind CSS + CSS Modules
-- **Icons**: Lucide React
+- **Frontend**: React 18 + TypeScript + Vite + Tailwind CSS
+- **Backend**: Node.js + Express + Jimp
+- **Processing**: Canvas API + Web Workers
 - **Testing**: Vitest + Testing Library
-- **Processing**: Web Workers for background tasks
-- **File Handling**: JSZip for batch downloads
 
-### Core Services
-- **ImageProcessor**: Canvas-based image manipulation
-- **ColorQuantizer**: K-means clustering for color reduction
-- **EdgeDetector**: Sobel and Canny edge detection algorithms
-- **Vectorizer**: Path generation and optimization
-- **SvgGenerator**: SVG markup generation with optimization
-- **WorkerManager**: Web Worker orchestration
-
-## 🚀 Getting Started
+## Quick Start
 
 ### Prerequisites
 - Node.js (v18 or higher)
-- npm or yarn
 
 ### Installation
 ```bash
-# Clone the repository
+# Clone repository
 git clone <repository-url>
 cd convertflow
 
 # Install dependencies
-npm install
+npm run install:all
 
-# Start development server
+# Start development servers
 npm run dev
 ```
 
 ### Available Scripts
 ```bash
-npm run dev      # Start development server
-npm run build    # Build for production
-npm run preview  # Preview production build
-npm run test     # Run tests
-npm run lint     # Run ESLint
+npm run dev              # Start both client and server
+npm run dev:client       # Start client only
+npm run dev:server       # Start server only
+npm run build           # Build for production
+npm run test            # Run tests
 ```
 
-## 🎛️ Configuration Options
+## Project Structure
 
-### Vectorization Settings
-- **Color Count**: 2-256 colors (default: 16)
-- **Smoothing Level**: Low/Medium/High path smoothing
-- **Path Simplification**: 0.1-10.0 tolerance (default: 1.0)
-- **Transparency**: Preserve alpha channel
-- **Algorithm**: Auto/Shapes/Photo/LineArt selection
+```
+convertflow/
+├── client/             # Frontend React application
+│   ├── src/           # React components and logic
+│   └── package.json   # Client dependencies
+├── server/            # Backend Node.js API
+│   ├── index.js       # Express server
+│   └── package.json   # Server dependencies
+└── package.json       # Root management scripts
+```
 
-### Performance Settings
-- **Web Workers**: Enable background processing
-- **Memory Monitoring**: Track and optimize memory usage
-- **Batch Size**: Configure simultaneous processing limit
+## Deployment
 
-## 🔬 Algorithms
+### Railway (Recommended)
 
-### Auto Selection
-Automatically chooses the best algorithm based on image characteristics:
-- **Shapes**: Optimized for geometric shapes and logos
-- **Photo**: Best for photographic content
-- **LineArt**: Specialized for line drawings and sketches
+#### Backend Deployment
+1. Create Railway account at [railway.app](https://railway.app)
+2. Create new project → Deploy from GitHub repo
+3. Configure service:
+   - Root directory: `server`
+   - Auto-detects `railway.json`
+4. Set environment variables:
+   ```
+   NODE_ENV=production
+   FRONTEND_URL=https://your-frontend-domain.com
+   JWT_SECRET=your-secure-random-string
+   ```
 
-### Processing Pipeline
-1. **Preprocessing**: Image loading and validation
-2. **Color Quantization**: K-means clustering for color reduction
-3. **Edge Detection**: Sobel/Canny algorithms for edge identification
-4. **Vectorization**: Path generation from edge data
-5. **Optimization**: Path simplification and SVG generation
+#### Frontend Deployment
+1. Add new service in Railway project
+2. Connect same repository
+3. Configure service:
+   - Root directory: `client`
+   - Auto-detects Vite configuration
+4. Set environment variables:
+   ```
+   VITE_API_URL=https://your-backend-service.railway.app
+   ```
 
-## 🧪 Testing
+### Alternative: Netlify/Vercel (Frontend)
+1. Connect repository to Netlify/Vercel
+2. Set build settings:
+   - Root directory: `client`
+   - Build command: `npm run build`
+   - Publish directory: `client/dist`
+3. Environment variables:
+   ```
+   VITE_API_URL=https://your-backend-service.railway.app
+   ```
 
-Comprehensive test suite covering:
-- Unit tests for core algorithms
-- Integration tests for user workflows
-- Performance benchmarks
-- Error handling scenarios
+### Environment Variables
 
+**Backend (.env)**
+```
+NODE_ENV=production
+PORT=3001
+FRONTEND_URL=https://your-frontend-domain.com
+JWT_SECRET=your-secure-random-string
+```
+
+**Frontend (.env.local)**
+```
+VITE_API_URL=https://your-backend-service.railway.app
+```
+
+## Local Development
+
+### Start Both Services
 ```bash
-npm run test        # Run all tests
-npm run test:run    # Run tests once
+npm run dev
 ```
 
-## 📊 Performance
+### Start Separately
+```bash
+# Terminal 1: Server
+cd server && npm run dev
 
-### Optimizations
-- Web Worker processing for non-blocking UI
-- Memory monitoring and garbage collection
-- Progressive rendering for large images
-- Intelligent algorithm selection
-- Canvas-based image processing
+# Terminal 2: Client  
+cd client && npm run dev
+```
 
-### Browser Support
+## Browser Support
+
 - Modern browsers with Canvas and Web Worker support
-- Progressive enhancement for older browsers
-- Responsive design for mobile devices
+- Chrome 60+, Firefox 55+, Safari 12+, Edge 79+
 
-## 🤝 Contributing
+## License
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the MIT License.
-
-## 🔗 Links
-
-- [Live Demo](https://convertflow.vercel.app)
-- [Documentation](./docs)
-- [Issue Tracker](./issues)
+MIT License

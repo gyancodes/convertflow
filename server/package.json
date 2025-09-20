@@ -1,0 +1,35 @@
+{
+  "name": "convertflow-server",
+  "version": "1.0.0",
+  "description": "Server-side API for ConvertFlow image processing",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "build": "echo 'No build step required'"
+  },
+  "dependencies": {
+    "compression": "^1.7.4",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5",
+    "helmet": "^7.1.0",
+    "imagetracerjs": "^1.2.6",
+    "multer": "^1.4.5-lts.1",
+    "potrace": "^2.1.8",
+    "sharp": "^0.32.6"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "keywords": [
+    "image",
+    "svg",
+    "conversion",
+    "vectorization",
+    "api"
+  ],
+  "author": "ConvertFlow",
+  "license": "MIT"
+}
