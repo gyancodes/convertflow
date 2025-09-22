@@ -1,34 +1,25 @@
-# ConvertFlow - Image to SVG Converter
+# ConvertFlow
 
-Advanced web application that converts PNG images into scalable vector graphics using computer vision algorithms.
+Professional PNG/JPEG to SVG converter with dual-engine processing and batch conversion capabilities.
 
 ## Features
 
-- **True Vector Conversion**: Converts raster images to actual vector paths
-- **Smart Color Quantization**: Intelligent color reduction with K-means clustering
-- **Batch Processing**: Convert multiple files simultaneously
-- **Client-Side Processing**: All processing happens locally - no uploads needed
-- **Real-time Preview**: Side-by-side comparison of original and converted images
-- **Web Workers**: Background processing for smooth UI performance
+- **Dual Engine Processing**: Potrace (smooth curves) and ImageTracer (color preservation)
+- **Batch Conversion**: Process multiple files simultaneously
+- **Premium Tiers**: Free, Pro, and Enterprise plans with different limits
+- **Server-Side Processing**: Reliable backend API with rate limiting
+- **Advanced Options**: Customizable conversion settings per engine
+- **ZIP Downloads**: Batch download converted files
 
 ## Tech Stack
 
 - **Frontend**: React 18 + TypeScript + Vite + Tailwind CSS
-- **Backend**: Node.js + Express + Jimp
-- **Processing**: Canvas API + Web Workers
-- **Testing**: Vitest + Testing Library
+- **Backend**: Node.js + Express + Sharp + Potrace + ImageTracer
+- **Deployment**: Railway (backend) + Vercel (frontend)
 
 ## Quick Start
 
-### Prerequisites
-- Node.js (v18 or higher)
-
-### Installation
 ```bash
-# Clone repository
-git clone <repository-url>
-cd convertflow
-
 # Install dependencies
 npm run install:all
 
@@ -36,103 +27,67 @@ npm run install:all
 npm run dev
 ```
 
-### Available Scripts
-```bash
-npm run dev              # Start both client and server
-npm run dev:client       # Start client only
-npm run dev:server       # Start server only
-npm run build           # Build for production
-npm run test            # Run tests
+## API Endpoints
+
+### Single File Conversion
+```
+POST /api/convert/single
+Content-Type: multipart/form-data
+
+Body:
+- file: Image file (PNG/JPEG)
+- engine: 'potrace' | 'imagetracer'
+- mode: 'vectorize' | 'wrapper'
 ```
 
-## Project Structure
+### Batch Conversion
+```
+POST /api/convert/batch
+Content-Type: multipart/form-data
 
+Body:
+- files: Array of image files
+- engine: 'potrace' | 'imagetracer'
 ```
-convertflow/
-├── client/             # Frontend React application
-│   ├── src/           # React components and logic
-│   └── package.json   # Client dependencies
-├── server/            # Backend Node.js API
-│   ├── index.js       # Express server
-│   └── package.json   # Server dependencies
-└── package.json       # Root management scripts
-```
+
+## Premium Tiers
+
+| Tier | Max File Size | Max Batch Size | Rate Limit |
+|------|---------------|----------------|------------|
+| Free | 5MB | 3 files | 100 req/15min |
+| Pro | 50MB | 25 files | 1000 req/15min |
+| Enterprise | 200MB | 100 files | 1000 req/15min |
 
 ## Deployment
 
-### Railway (Recommended)
-
-#### Backend Deployment
-1. Create Railway account at [railway.app](https://railway.app)
-2. Create new project → Deploy from GitHub repo
-3. Configure service:
-   - Root directory: `server`
-   - Auto-detects `railway.json`
-4. Set environment variables:
-   ```
-   NODE_ENV=production
-   FRONTEND_URL=https://your-frontend-domain.com
-   JWT_SECRET=your-secure-random-string
-   ```
-
-#### Frontend Deployment
-1. Add new service in Railway project
-2. Connect same repository
-3. Configure service:
-   - Root directory: `client`
-   - Auto-detects Vite configuration
-4. Set environment variables:
-   ```
-   VITE_API_URL=https://your-backend-service.railway.app
-   ```
-
-### Alternative: Netlify/Vercel (Frontend)
-1. Connect repository to Netlify/Vercel
-2. Set build settings:
-   - Root directory: `client`
-   - Build command: `npm run build`
-   - Publish directory: `client/dist`
+### Railway (Backend)
+1. Create Railway project
+2. Set root directory: `server`
 3. Environment variables:
    ```
-   VITE_API_URL=https://your-backend-service.railway.app
+   NODE_ENV=production
+   FRONTEND_URL=https://your-vercel-app.vercel.app
+   JWT_SECRET=your-secure-secret
    ```
 
-### Environment Variables
+### Vercel (Frontend)
+1. Create Vercel project
+2. Set root directory: `client`
+3. Environment variables:
+   ```
+   VITE_API_URL=https://your-railway-app.railway.app
+   ```
 
-**Backend (.env)**
-```
-NODE_ENV=production
-PORT=3001
-FRONTEND_URL=https://your-frontend-domain.com
-JWT_SECRET=your-secure-random-string
-```
+## Scripts
 
-**Frontend (.env.local)**
-```
-VITE_API_URL=https://your-backend-service.railway.app
-```
-
-## Local Development
-
-### Start Both Services
 ```bash
-npm run dev
+npm run dev              # Start both services
+npm run dev:client       # Client only
+npm run dev:server       # Server only
+npm run build           # Build client
+npm run test            # Run tests
 ```
-
-### Start Separately
-```bash
-# Terminal 1: Server
-cd server && npm run dev
-
-# Terminal 2: Client  
-cd client && npm run dev
-```
-
-## Browser Support
-
-- Modern browsers with Canvas and Web Worker support
-- Chrome 60+, Firefox 55+, Safari 12+, Edge 79+
 
 ## License
 
-MIT License
+MIT
