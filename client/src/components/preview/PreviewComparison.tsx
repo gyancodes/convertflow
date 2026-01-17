@@ -1,5 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { ZoomIn, ZoomOut, RotateCcw, Download, Eye, EyeOff, Maximize2, Minimize2 } from 'lucide-react';
+import React, { useState, useRef, useEffect } from "react";
+import {
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  Download,
+  Eye,
+  EyeOff,
+  Maximize2,
+  Minimize2,
+} from "lucide-react";
 
 interface PreviewComparisonProps {
   originalFile: File;
@@ -14,16 +23,18 @@ export const PreviewComparison: React.FC<PreviewComparisonProps> = ({
   svgContent,
   filename,
   onDownload,
-  onClose
+  onClose,
 }) => {
   const [zoom, setZoom] = useState(1);
   const [showOriginal, setShowOriginal] = useState(true);
   const [showConverted, setShowConverted] = useState(true);
-  const [viewMode, setViewMode] = useState<'side-by-side' | 'overlay' | 'single'>('side-by-side');
+  const [viewMode, setViewMode] = useState<
+    "side-by-side" | "overlay" | "single"
+  >("side-by-side");
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [originalImageUrl, setOriginalImageUrl] = useState<string>('');
-  const [svgDataUrl, setSvgDataUrl] = useState<string>('');
-  
+  const [originalImageUrl, setOriginalImageUrl] = useState<string>("");
+  const [svgDataUrl, setSvgDataUrl] = useState<string>("");
+
   const containerRef = useRef<HTMLDivElement>(null);
   const originalImageRef = useRef<HTMLImageElement>(null);
   const svgImageRef = useRef<HTMLImageElement>(null);
@@ -34,7 +45,7 @@ export const PreviewComparison: React.FC<PreviewComparisonProps> = ({
     setOriginalImageUrl(url);
 
     // Create data URL for SVG
-    const svgBlob = new Blob([svgContent], { type: 'image/svg+xml' });
+    const svgBlob = new Blob([svgContent], { type: "image/svg+xml" });
     const svgUrl = URL.createObjectURL(svgBlob);
     setSvgDataUrl(svgUrl);
 
@@ -45,11 +56,11 @@ export const PreviewComparison: React.FC<PreviewComparisonProps> = ({
   }, [originalFile, svgContent]);
 
   const handleZoomIn = () => {
-    setZoom(prev => Math.min(prev * 1.2, 5));
+    setZoom((prev) => Math.min(prev * 1.2, 5));
   };
 
   const handleZoomOut = () => {
-    setZoom(prev => Math.max(prev / 1.2, 0.1));
+    setZoom((prev) => Math.max(prev / 1.2, 0.1));
   };
 
   const handleResetZoom = () => {
@@ -70,21 +81,24 @@ export const PreviewComparison: React.FC<PreviewComparisonProps> = ({
   };
 
   const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return "0 Bytes";
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
   const svgSize = new Blob([svgContent]).size;
-  const compressionRatio = ((originalFile.size - svgSize) / originalFile.size * 100).toFixed(1);
+  const compressionRatio = (
+    ((originalFile.size - svgSize) / originalFile.size) *
+    100
+  ).toFixed(1);
 
   return (
-    <div 
+    <div
       ref={containerRef}
       className={`fixed inset-0 bg-black bg-opacity-90 flex flex-col z-50 ${
-        isFullscreen ? 'p-0' : 'p-4'
+        isFullscreen ? "p-0" : "p-4"
       }`}
     >
       {/* Header */}
@@ -94,43 +108,48 @@ export const PreviewComparison: React.FC<PreviewComparisonProps> = ({
           <div className="flex items-center space-x-4 text-sm text-gray-600 mt-1">
             <span>Original: {formatFileSize(originalFile.size)}</span>
             <span>SVG: {formatFileSize(svgSize)}</span>
-            <span className={`font-medium ${
-              parseFloat(compressionRatio) > 0 ? 'text-green-600' : 'text-red-600'
-            }`}>
-              {parseFloat(compressionRatio) > 0 ? '-' : '+'}{Math.abs(parseFloat(compressionRatio))}%
+            <span
+              className={`font-medium ${
+                parseFloat(compressionRatio) > 0
+                  ? "text-green-600"
+                  : "text-purple-600"
+              }`}
+            >
+              {parseFloat(compressionRatio) > 0 ? "-" : "+"}
+              {Math.abs(parseFloat(compressionRatio))}%
             </span>
           </div>
         </div>
-        
+
         <div className="flex items-center space-x-2">
           {/* View Mode Controls */}
           <div className="flex bg-gray-100 rounded-lg p-1">
             <button
-              onClick={() => setViewMode('side-by-side')}
+              onClick={() => setViewMode("side-by-side")}
               className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                viewMode === 'side-by-side' 
-                  ? 'bg-white text-gray-900 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-900'
+                viewMode === "side-by-side"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
               }`}
             >
               Side by Side
             </button>
             <button
-              onClick={() => setViewMode('overlay')}
+              onClick={() => setViewMode("overlay")}
               className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                viewMode === 'overlay' 
-                  ? 'bg-white text-gray-900 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-900'
+                viewMode === "overlay"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
               }`}
             >
               Overlay
             </button>
             <button
-              onClick={() => setViewMode('single')}
+              onClick={() => setViewMode("single")}
               className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                viewMode === 'single' 
-                  ? 'bg-white text-gray-900 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-900'
+                viewMode === "single"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
               }`}
             >
               Single
@@ -171,25 +190,39 @@ export const PreviewComparison: React.FC<PreviewComparisonProps> = ({
             className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
             title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
           >
-            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            {isFullscreen ? (
+              <Minimize2 className="w-4 h-4" />
+            ) : (
+              <Maximize2 className="w-4 h-4" />
+            )}
           </button>
-          
+
           <button
             onClick={onDownload}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2"
+            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2"
           >
             <Download className="w-4 h-4" />
             <span>Download SVG</span>
           </button>
-          
+
           {onClose && (
             <button
               onClick={onClose}
               className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
               title="Close"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           )}
@@ -198,7 +231,7 @@ export const PreviewComparison: React.FC<PreviewComparisonProps> = ({
 
       {/* Preview Area */}
       <div className="flex-1 bg-gray-100 rounded-b-lg overflow-hidden">
-        {viewMode === 'side-by-side' && (
+        {viewMode === "side-by-side" && (
           <div className="h-full flex">
             {/* Original Image */}
             <div className="flex-1 relative bg-white border-r border-gray-300">
@@ -238,42 +271,50 @@ export const PreviewComparison: React.FC<PreviewComparisonProps> = ({
           </div>
         )}
 
-        {viewMode === 'overlay' && (
+        {viewMode === "overlay" && (
           <div className="h-full relative bg-white">
             <div className="absolute top-4 left-4 z-10 flex space-x-2">
               <button
                 onClick={() => setShowOriginal(!showOriginal)}
                 className={`flex items-center space-x-2 px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-                  showOriginal 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-black bg-opacity-75 text-white hover:bg-opacity-90'
+                  showOriginal
+                    ? "bg-purple-600 text-white"
+                    : "bg-black bg-opacity-75 text-white hover:bg-opacity-90"
                 }`}
               >
-                {showOriginal ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                {showOriginal ? (
+                  <Eye className="w-4 h-4" />
+                ) : (
+                  <EyeOff className="w-4 h-4" />
+                )}
                 <span>Original</span>
               </button>
               <button
                 onClick={() => setShowConverted(!showConverted)}
                 className={`flex items-center space-x-2 px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-                  showConverted 
-                    ? 'bg-green-600 text-white' 
-                    : 'bg-black bg-opacity-75 text-white hover:bg-opacity-90'
+                  showConverted
+                    ? "bg-green-600 text-white"
+                    : "bg-black bg-opacity-75 text-white hover:bg-opacity-90"
                 }`}
               >
-                {showConverted ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                {showConverted ? (
+                  <Eye className="w-4 h-4" />
+                ) : (
+                  <EyeOff className="w-4 h-4" />
+                )}
                 <span>Converted</span>
               </button>
             </div>
-            
+
             <div className="h-full flex items-center justify-center p-4 overflow-auto relative">
               {showOriginal && (
                 <img
                   src={originalImageUrl}
                   alt="Original"
                   className="absolute max-w-none transition-all duration-200"
-                  style={{ 
+                  style={{
                     transform: `scale(${zoom})`,
-                    opacity: showConverted ? 0.7 : 1
+                    opacity: showConverted ? 0.7 : 1,
                   }}
                 />
               )}
@@ -282,9 +323,9 @@ export const PreviewComparison: React.FC<PreviewComparisonProps> = ({
                   src={svgDataUrl}
                   alt="Converted SVG"
                   className="absolute max-w-none transition-all duration-200"
-                  style={{ 
+                  style={{
                     transform: `scale(${zoom})`,
-                    opacity: showOriginal ? 0.7 : 1
+                    opacity: showOriginal ? 0.7 : 1,
                   }}
                 />
               )}
@@ -292,16 +333,16 @@ export const PreviewComparison: React.FC<PreviewComparisonProps> = ({
           </div>
         )}
 
-        {viewMode === 'single' && (
+        {viewMode === "single" && (
           <div className="h-full relative bg-white">
             <div className="absolute top-4 left-4 z-10">
               <div className="flex bg-black bg-opacity-75 rounded-lg p-1">
                 <button
                   onClick={() => setShowOriginal(true)}
                   className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                    showOriginal 
-                      ? 'bg-white text-gray-900' 
-                      : 'text-white hover:bg-white hover:bg-opacity-20'
+                    showOriginal
+                      ? "bg-white text-gray-900"
+                      : "text-white hover:bg-white hover:bg-opacity-20"
                   }`}
                 >
                   Original
@@ -309,16 +350,16 @@ export const PreviewComparison: React.FC<PreviewComparisonProps> = ({
                 <button
                   onClick={() => setShowOriginal(false)}
                   className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                    !showOriginal 
-                      ? 'bg-white text-gray-900' 
-                      : 'text-white hover:bg-white hover:bg-opacity-20'
+                    !showOriginal
+                      ? "bg-white text-gray-900"
+                      : "text-white hover:bg-white hover:bg-opacity-20"
                   }`}
                 >
                   Converted
                 </button>
               </div>
             </div>
-            
+
             <div className="h-full flex items-center justify-center p-4 overflow-auto">
               <img
                 src={showOriginal ? originalImageUrl : svgDataUrl}

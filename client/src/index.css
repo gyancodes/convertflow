@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -10,17 +10,25 @@
   --vercel-light-gray: #999999;
   --vercel-border: #eaeaea;
   --vercel-background: #fafafa;
-  --vercel-blue: #0070f3;
+  /* Changed blue to red for accent */
+  --vercel-blue: #dc2626;
   --vercel-purple: #7928ca;
   --vercel-pink: #ff0080;
   --vercel-cyan: #50e3c2;
   --vercel-orange: #f5a623;
-  --vercel-red: #ff3333;
+  --vercel-red: #dc2626;
   --vercel-green: #00d924;
 }
 
 * {
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family:
+    "Outfit",
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
 }
 
 html {
@@ -31,10 +39,12 @@ body {
   background: #ffffff;
   color: var(--vercel-black);
   min-height: 100vh;
-  font-feature-settings: 'rlig' 1, 'calt' 1;
+  font-feature-settings:
+    "rlig" 1,
+    "calt" 1;
 }
 
-/* Custom scrollbar - Vercel style */
+/* Custom scrollbar - Red styled */
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -44,15 +54,15 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--vercel-border);
+  background: var(--vercel-light-gray);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--vercel-gray);
+  background: var(--vercel-red);
 }
 
-/* Vercel-inspired animations */
+/* Animations */
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -65,8 +75,12 @@ body {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes scaleIn {
@@ -81,8 +95,12 @@ body {
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 .animate-fade-in-up {
@@ -98,22 +116,27 @@ body {
 }
 
 .shimmer {
-  background: linear-gradient(90deg, transparent, rgba(0,0,0,0.04), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(220, 38, 38, 0.04),
+    transparent
+  );
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
 }
 
-/* Vercel button styles */
+/* Button styles - Red accent */
 .btn-primary {
-  background: var(--vercel-black);
+  background: var(--vercel-red);
   color: white;
-  border: 1px solid var(--vercel-black);
+  border: 1px solid var(--vercel-red);
   transition: all 0.2s ease;
 }
 
 .btn-primary:hover {
-  background: transparent;
-  color: var(--vercel-black);
+  background: white;
+  color: var(--vercel-red);
 }
 
 .btn-secondary {
@@ -127,7 +150,7 @@ body {
   border-color: var(--vercel-black);
 }
 
-/* Vercel card styles */
+/* Card styles */
 .vercel-card {
   background: white;
   border: 1px solid var(--vercel-border);
@@ -136,11 +159,11 @@ body {
 }
 
 .vercel-card:hover {
-  border-color: var(--vercel-black);
-  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+  border-color: var(--vercel-red);
+  box-shadow: 0 8px 30px rgba(220, 38, 38, 0.12);
 }
 
-/* Gradient backgrounds - Vercel style */
+/* Gradient backgrounds */
 .gradient-bg {
   background: linear-gradient(to bottom right, #fafafa, #ffffff);
 }
@@ -152,8 +175,8 @@ body {
   background-clip: text;
 }
 
-/* Vercel-style focus states */
+/* Focus states */
 .focus-ring:focus {
   outline: none;
-  box-shadow: 0 0 0 2px var(--vercel-blue);
+  box-shadow: 0 0 0 2px var(--vercel-red);
 }

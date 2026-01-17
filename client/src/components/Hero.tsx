@@ -1,5 +1,12 @@
-import React from 'react';
-import { ArrowRight, Zap, Shield, Globe, Sparkles } from 'lucide-react';
+import React from "react";
+import {
+  ArrowRight,
+  Github,
+  Sparkles,
+  Zap,
+  Shield,
+  Image as ImageIcon,
+} from "lucide-react";
 
 interface HeroProps {
   onGetStarted: () => void;
@@ -7,75 +14,94 @@ interface HeroProps {
 
 export const Hero: React.FC<HeroProps> = ({ onGetStarted }) => {
   return (
-    <section className="relative pt-32 pb-20 bg-white">
-      {/* Subtle background pattern */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
-      
-      <div className="max-w-7xl mx-auto px-6 text-center relative">
-        <div className="max-w-4xl mx-auto">
+    <section className="relative min-h-[90vh] flex flex-col justify-center pt-20 pb-12 overflow-hidden bg-white">
+      {/* Background gradients */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-7xl pointer-events-none -z-10">
+        <div className="absolute top-0 left-1/4 w-72 h-72 bg-red-100/50 rounded-full blur-3xl opacity-50 mix-blend-multiply animate-blob"></div>
+        <div className="absolute top-0 right-1/4 w-72 h-72 bg-orange-100/50 rounded-full blur-3xl opacity-50 mix-blend-multiply animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-32 left-1/2 w-72 h-72 bg-rose-100/50 rounded-full blur-3xl opacity-50 mix-blend-multiply animate-blob animation-delay-4000"></div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 relative z-10 w-full">
+        <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1 mb-8 rounded-full bg-blue-50 text-blue-700 text-sm font-medium animate-fade-in border border-blue-200">
-            <Sparkles className="w-4 h-4" />
-            Dual Engine Processing: Potrace & ImageTracer
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-red-100 shadow-sm mb-6 animate-fade-in hover:border-red-200 transition-colors">
+            <span className="flex h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>
+            <span className="text-xs font-medium text-gray-800">
+              v1.0 is now Open Source
+            </span>
+            
+            
           </div>
 
           {/* Main Headline */}
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-[1.1] tracking-tight text-black animate-fade-in-up">
-            Professional Image
-            <br />
-            <span className="text-blue-600">to SVG Conversion</span>
+          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-gray-900 mb-6 animate-fade-in-up leading-tight">
+            Convert Images to <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-orange-600">
+              Vector Graphics
+            </span>
           </h1>
 
           {/* Subtitle */}
-          <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-            Transform PNG and JPEG images into crisp, scalable vector graphics with our advanced dual-engine processing.
-            <br className="hidden md:inline" />
-            Choose between Potrace for line art or ImageTracer for complex images.
+          <p className="text-lg text-gray-600 mb-8 max-w-2xl leading-relaxed animate-fade-in-up delay-100">
+            Professional-grade PNG & JPG to SVG converter. Now running
+            significantly faster with{" "}
+            <span className="text-red-600 font-semibold">
+              Client-Side Processing
+            </span>
+            . Privacy-focused, unlimited, and free forever.
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+          <div className="flex flex-col sm:flex-row items-center gap-3 animate-fade-in-up delay-200 mb-12">
             <button
               onClick={onGetStarted}
-              className="group flex items-center gap-2 px-6 py-3 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-all duration-200 focus-ring"
+              className="min-w-[160px] group flex items-center justify-center gap-2 px-6 py-3 bg-red-600 text-white rounded-full font-semibold text-base hover:bg-red-700 hover:shadow-lg hover:shadow-red-500/25 transition-all duration-300"
             >
               Start Converting
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </button>
-            <button className="flex items-center gap-2 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:border-black transition-all duration-200 focus-ring">
-              View Demo
-            </button>
+            <a
+              href="https://github.com/gyancodes/convertflow"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="min-w-[160px] flex items-center justify-center gap-2 px-6 py-3 bg-white text-gray-700 border border-gray-200 rounded-full font-semibold text-base hover:border-gray-400 hover:bg-gray-50 transition-all duration-300"
+            >
+              <Github className="w-4 h-4" />
+              Star on GitHub
+            </a>
           </div>
 
           {/* Feature Pills */}
-          <div className="flex flex-wrap items-center justify-center gap-4 mb-16 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
-            <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 rounded-full text-sm text-blue-700 border border-blue-200">
-              <div className="w-2 h-2 bg-blue-500 rounded-full" />
-              Dual Engine Support
-            </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-green-50 rounded-full text-sm text-green-700 border border-green-200">
-              <Shield className="w-4 h-4" />
-              Secure Processing
-            </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-purple-50 rounded-full text-sm text-purple-700 border border-purple-200">
-              <Zap className="w-4 h-4" />
-              Batch Conversion
-            </div>
-          </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-2xl mx-auto animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-black mb-1">2</div>
-              <div className="text-sm text-gray-600">Conversion Engines</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-black mb-1">PNG+JPEG</div>
-              <div className="text-sm text-gray-600">Supported Formats</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-black mb-1">Auto</div>
-              <div className="text-sm text-gray-600">Error Recovery</div>
+          <div className="w-full animate-fade-in-up delay-300">
+            <p className="text-xs text-gray-500 font-medium mb-4 uppercase tracking-wider">
+              Trusted by developers for
+            </p>
+            <div className="flex flex-wrap justify-center gap-6 md:gap-12">
+              <div className="flex items-center gap-2 text-gray-700">
+                <div className="p-1.5 bg-red-50 rounded-lg text-red-600 shadow-sm">
+                  <ImageIcon className="w-4 h-4" />
+                </div>
+                <div className="text-left">
+                  <div className="font-bold text-sm">Unlimited</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-gray-700">
+                <div className="p-1.5 bg-red-50 rounded-lg text-red-600 shadow-sm">
+                  <Shield className="w-4 h-4" />
+                </div>
+                <div className="text-left">
+                  <div className="font-bold text-sm">100% Private</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-gray-700">
+                <div className="p-1.5 bg-red-50 rounded-lg text-red-600 shadow-sm">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div className="text-left">
+                  <div className="font-bold text-sm">High Quality</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

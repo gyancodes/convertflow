@@ -1,14 +1,17 @@
 import React, { useState, useCallback } from "react";
-import { convertImageToSvg, downloadSvg, validateImageFile, ConversionOptions } from "../../utils/converter";
-import { PremiumFeatures, getCurrentTier, checkFileLimit, checkBatchLimit, PREMIUM_TIERS, PremiumTier } from "../premium/PremiumFeatures";
+import {
+  convertImageToSvg,
+  downloadSvg,
+  validateImageFile,
+  ConversionOptions,
+} from "../../utils/converter";
 import { PreviewComparison } from "../preview/PreviewComparison";
-import { Crown, AlertTriangle, Eye } from "lucide-react";
-import JSZip from "jszip";
+import { AlertTriangle, Eye } from "lucide-react";
 
 interface ConversionFile {
   file: File;
   id: string;
-  status: 'pending' | 'processing' | 'completed' | 'error';
+  status: "pending" | "processing" | "completed" | "error";
   progress: number;
   svgContent?: string;
   error?: string;
@@ -17,8 +20,8 @@ interface ConversionFile {
 }
 
 interface ConversionSettings {
-  mode: 'wrapper' | 'vectorize';
-  engine: 'potrace' | 'imagetracer';
+  mode: "wrapper" | "vectorize";
+  engine: "potrace" | "imagetracer";
   preset: string;
   numberOfColors: number;
   scale: number;
@@ -35,9 +38,9 @@ interface ConversionSettings {
 export const ProfessionalConverter: React.FC = () => {
   const [files, setFiles] = useState<ConversionFile[]>([]);
   const [settings, setSettings] = useState<ConversionSettings>({
-    mode: 'vectorize',
-    engine: 'potrace',
-    preset: 'default',
+    mode: "vectorize",
+    engine: "imagetracer",
+    preset: "default",
     numberOfColors: 16,
     scale: 1,
     strokeWidth: 1,
@@ -47,74 +50,109 @@ export const ProfessionalConverter: React.FC = () => {
     threshold: 128,
     turdSize: 2,
     optCurve: true,
-    optTolerance: 0.2
+    optTolerance: 0.2,
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
-  
-  // Premium features state
-  const [currentUserTier, setCurrentUserTier] = useState<PremiumTier['id']>('free');
-  const [showPremiumModal, setShowPremiumModal] = useState(false);
-  const [premiumError, setPremiumError] = useState<string>('');
-  
+
   // Preview state
   const [previewFile, setPreviewFile] = useState<ConversionFile | null>(null);
-  const [networkError, setNetworkError] = useState<string>('');
-  const [retryCount, setRetryCount] = useState<{ [fileId: string]: number }>({});
-  
-  const userTier = getCurrentTier(currentUserTier);
+  const [networkError, setNetworkError] = useState<string>("");
+  const [retryCount, setRetryCount] = useState<{ [fileId: string]: number }>(
+    {},
+  );
 
   // Helper function to classify errors
-  const classifyError = (error: any): { type: 'network' | 'server' | 'validation' | 'unknown', message: string, retryable: boolean } => {
+  const classifyError = (
+    error: any,
+  ): {
+    type: "network" | "server" | "validation" | "unknown";
+    message: string;
+    retryable: boolean;
+  } => {
     if (!navigator.onLine) {
-      return { type: 'network', message: 'No internet connection. Please check your network and try again.', retryable: true };
+      return {
+        type: "network",
+        message:
+          "No internet connection. Please check your network and try again.",
+        retryable: true,
+      };
     }
-    
-    if (error?.name === 'TypeError' && error?.message?.includes('fetch')) {
-      return { type: 'network', message: 'Network error. Please check your connection and try again.', retryable: true };
+
+    if (error?.name === "TypeError" && error?.message?.includes("fetch")) {
+      return {
+        type: "network",
+        message: "Network error. Please check your connection and try again.",
+        retryable: true,
+      };
     }
-    
+
     if (error?.status >= 500) {
-      return { type: 'server', message: 'Server error. Please try again in a moment.', retryable: true };
+      return {
+        type: "server",
+        message: "Server error. Please try again in a moment.",
+        retryable: true,
+      };
     }
-    
+
     if (error?.status === 413) {
-      return { type: 'validation', message: 'File too large. Please use a smaller image.', retryable: false };
+      return {
+        type: "validation",
+        message: "File too large. Please use a smaller image.",
+        retryable: false,
+      };
     }
-    
+
     if (error?.status === 429) {
-      return { type: 'server', message: 'Too many requests. Please wait a moment and try again.', retryable: true };
+      return {
+        type: "server",
+        message: "Too many requests. Please wait a moment and try again.",
+        retryable: true,
+      };
     }
-    
+
     if (error?.status >= 400 && error?.status < 500) {
-      return { type: 'validation', message: error?.message || 'Invalid request. Please check your file and settings.', retryable: false };
+      return {
+        type: "validation",
+        message:
+          error?.message ||
+          "Invalid request. Please check your file and settings.",
+        retryable: false,
+      };
     }
-    
-    return { 
-      type: 'unknown', 
-      message: error instanceof Error ? error.message : 'Conversion failed. Please try again.', 
-      retryable: true 
+
+    return {
+      type: "unknown",
+      message:
+        error instanceof Error
+          ? error.message
+          : "Conversion failed. Please try again.",
+      retryable: true,
     };
   };
 
   // Helper function to retry conversion with exponential backoff
-  const retryConversion = async (fileData: ConversionFile, conversionOptions: ConversionOptions, attempt: number = 1): Promise<string> => {
+  const retryConversion = async (
+    fileData: ConversionFile,
+    conversionOptions: ConversionOptions,
+    attempt: number = 1,
+  ): Promise<string> => {
     const maxRetries = 3;
     const baseDelay = 1000; // 1 second
-    
+
     try {
       return await convertImageToSvg(fileData.file, conversionOptions);
     } catch (error) {
       const errorInfo = classifyError(error);
-      
+
       if (!errorInfo.retryable || attempt >= maxRetries) {
         throw error;
       }
-      
+
       // Exponential backoff: 1s, 2s, 4s
       const delay = baseDelay * Math.pow(2, attempt - 1);
-      await new Promise(resolve => setTimeout(resolve, delay));
-      
+      await new Promise((resolve) => setTimeout(resolve, delay));
+
       return retryConversion(fileData, conversionOptions, attempt + 1);
     }
   };
@@ -122,19 +160,9 @@ export const ProfessionalConverter: React.FC = () => {
   const handleFileSelect = useCallback((fileList: FileList | null) => {
     if (!fileList) return;
 
-    setPremiumError('');
-    const currentBatchSize = files.length;
-    const newBatchSize = currentBatchSize + fileList.length;
-
-    // Check batch limit
-    if (!checkBatchLimit(newBatchSize, userTier)) {
-      setPremiumError(`Batch limit exceeded. Your ${userTier.name} plan allows up to ${userTier.maxBatchSize} files per batch.`);
-      setShowPremiumModal(true);
-      return;
-    }
-
     const newFiles: ConversionFile[] = [];
     const rejectedFiles: string[] = [];
+    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB reasonable limit for browser
 
     Array.from(fileList).forEach((file) => {
       const error = validateImageFile(file);
@@ -144,87 +172,90 @@ export const ProfessionalConverter: React.FC = () => {
       }
 
       // Check file size limit
-      if (!checkFileLimit(file.size, userTier)) {
-        rejectedFiles.push(`${file.name}: File size exceeds ${userTier.maxFileSize}MB limit for ${userTier.name} plan`);
+      if (file.size > MAX_FILE_SIZE) {
+        rejectedFiles.push(`${file.name}: File size exceeds 50MB limit`);
         return;
       }
 
       newFiles.push({
         file,
         id: Math.random().toString(36).substr(2, 9),
-        status: 'pending',
+        status: "pending",
         progress: 0,
-        originalSize: file.size
+        originalSize: file.size,
       });
     });
 
     if (rejectedFiles.length > 0) {
-      setPremiumError(`Some files were rejected:\n${rejectedFiles.join('\n')}`);
-      if (newFiles.length === 0) {
-        setShowPremiumModal(true);
-        return;
-      }
+      alert(`Some files were rejected:\n${rejectedFiles.join("\n")}`);
     }
 
-    setFiles(prev => [...prev, ...newFiles]);
-  }, [files.length, userTier]);
+    setFiles((prev) => [...prev, ...newFiles]);
+  }, []);
 
   const removeFile = useCallback((id: string) => {
-    setFiles(prev => prev.filter(f => f.id !== id));
+    setFiles((prev) => prev.filter((f) => f.id !== id));
   }, []);
 
   const convertFiles = useCallback(async () => {
     if (files.length === 0) return;
 
     setIsProcessing(true);
-    
+
     const conversionOptions: ConversionOptions = {
       mode: settings.mode,
       engine: settings.engine,
-      options: settings.engine === 'potrace' ? {
-        threshold: settings.threshold,
-        turdSize: settings.turdSize,
-        optCurve: settings.optCurve,
-        optTolerance: settings.optTolerance
-      } : {
-        numberOfColors: settings.numberOfColors,
-        scale: settings.scale,
-        strokeWidth: settings.strokeWidth,
-        ltres: settings.ltres,
-        qtres: settings.qtres
-      }
+      options:
+        settings.engine === "potrace"
+          ? {
+              threshold: settings.threshold,
+              turdSize: settings.turdSize,
+              optCurve: settings.optCurve,
+              optTolerance: settings.optTolerance,
+            }
+          : {
+              numberOfColors: settings.numberOfColors,
+              scale: settings.scale,
+              strokeWidth: settings.strokeWidth,
+              ltres: settings.ltres,
+              qtres: settings.qtres,
+            },
     };
 
     for (const fileData of files) {
-      if (fileData.status === 'completed') continue;
+      if (fileData.status === "completed") continue;
 
-      setFiles(prev => prev.map(f => 
-        f.id === fileData.id 
-          ? { ...f, status: 'processing' as const, progress: 0 }
-          : f
-      ));
+      setFiles((prev) =>
+        prev.map((f) =>
+          f.id === fileData.id
+            ? { ...f, status: "processing" as const, progress: 0 }
+            : f,
+        ),
+      );
 
       try {
         // Clear any previous network errors
-        setNetworkError('');
-        
+        setNetworkError("");
+
         const svgContent = await retryConversion(fileData, conversionOptions);
         const compressedSize = new Blob([svgContent]).size;
 
-        setFiles(prev => prev.map(f => 
-          f.id === fileData.id 
-            ? { 
-                ...f, 
-                status: 'completed' as const, 
-                progress: 100, 
-                svgContent,
-                compressedSize
-              }
-            : f
-        ));
-        
+        setFiles((prev) =>
+          prev.map((f) =>
+            f.id === fileData.id
+              ? {
+                  ...f,
+                  status: "completed" as const,
+                  progress: 100,
+                  svgContent,
+                  compressedSize,
+                }
+              : f,
+          ),
+        );
+
         // Reset retry count on success
-        setRetryCount(prev => {
+        setRetryCount((prev) => {
           const newCount = { ...prev };
           delete newCount[fileData.id];
           return newCount;
@@ -232,28 +263,30 @@ export const ProfessionalConverter: React.FC = () => {
       } catch (error) {
         const errorInfo = classifyError(error);
         const currentRetries = retryCount[fileData.id] || 0;
-        
+
         // Update retry count
-        setRetryCount(prev => ({
+        setRetryCount((prev) => ({
           ...prev,
-          [fileData.id]: currentRetries + 1
+          [fileData.id]: currentRetries + 1,
         }));
-        
+
         // Set network error for display
-        if (errorInfo.type === 'network') {
+        if (errorInfo.type === "network") {
           setNetworkError(errorInfo.message);
         }
-        
-        setFiles(prev => prev.map(f => 
-          f.id === fileData.id 
-            ? { 
-                ...f, 
-                status: 'error' as const, 
-                progress: 0,
-                error: `${errorInfo.message}${currentRetries > 0 ? ` (Attempt ${currentRetries + 1})` : ''}`
-              }
-            : f
-        ));
+
+        setFiles((prev) =>
+          prev.map((f) =>
+            f.id === fileData.id
+              ? {
+                  ...f,
+                  status: "error" as const,
+                  progress: 0,
+                  error: `${errorInfo.message}${currentRetries > 0 ? ` (Attempt ${currentRetries + 1})` : ""}`,
+                }
+              : f,
+          ),
+        );
       }
     }
 
@@ -266,76 +299,90 @@ export const ProfessionalConverter: React.FC = () => {
     }
   }, []);
 
-  const retryFile = useCallback(async (fileData: ConversionFile) => {
-    if (isProcessing) return;
-    
-    // Reset file status
-    setFiles(prev => prev.map(f => 
-      f.id === fileData.id 
-        ? { ...f, status: 'processing' as const, progress: 0, error: undefined }
-        : f
-    ));
-    
-    const conversionOptions: ConversionOptions = {
-      mode: settings.mode,
-      preset: settings.preset,
-      numberOfColors: settings.numberOfColors,
-      scale: settings.scale,
-      strokeWidth: settings.strokeWidth,
-      ltres: settings.ltres,
-      qtres: settings.qtres
-    };
+  const retryFile = useCallback(
+    async (fileData: ConversionFile) => {
+      if (isProcessing) return;
 
-    try {
-      setNetworkError('');
-      const svgContent = await retryConversion(fileData, conversionOptions);
-      const compressedSize = new Blob([svgContent]).size;
+      // Reset file status
+      setFiles((prev) =>
+        prev.map((f) =>
+          f.id === fileData.id
+            ? {
+                ...f,
+                status: "processing" as const,
+                progress: 0,
+                error: undefined,
+              }
+            : f,
+        ),
+      );
 
-      setFiles(prev => prev.map(f => 
-        f.id === fileData.id 
-          ? { 
-              ...f, 
-              status: 'completed' as const, 
-              progress: 100, 
-              svgContent,
-              compressedSize
-            }
-          : f
-      ));
-      
-      setRetryCount(prev => {
-        const newCount = { ...prev };
-        delete newCount[fileData.id];
-        return newCount;
-      });
-    } catch (error) {
-      const errorInfo = classifyError(error);
-      const currentRetries = retryCount[fileData.id] || 0;
-      
-      setRetryCount(prev => ({
-        ...prev,
-        [fileData.id]: currentRetries + 1
-      }));
-      
-      if (errorInfo.type === 'network') {
-        setNetworkError(errorInfo.message);
+      const conversionOptions: ConversionOptions = {
+        mode: settings.mode,
+        preset: settings.preset,
+        numberOfColors: settings.numberOfColors,
+        scale: settings.scale,
+        strokeWidth: settings.strokeWidth,
+        ltres: settings.ltres,
+        qtres: settings.qtres,
+      };
+
+      try {
+        setNetworkError("");
+        const svgContent = await retryConversion(fileData, conversionOptions);
+        const compressedSize = new Blob([svgContent]).size;
+
+        setFiles((prev) =>
+          prev.map((f) =>
+            f.id === fileData.id
+              ? {
+                  ...f,
+                  status: "completed" as const,
+                  progress: 100,
+                  svgContent,
+                  compressedSize,
+                }
+              : f,
+          ),
+        );
+
+        setRetryCount((prev) => {
+          const newCount = { ...prev };
+          delete newCount[fileData.id];
+          return newCount;
+        });
+      } catch (error) {
+        const errorInfo = classifyError(error);
+        const currentRetries = retryCount[fileData.id] || 0;
+
+        setRetryCount((prev) => ({
+          ...prev,
+          [fileData.id]: currentRetries + 1,
+        }));
+
+        if (errorInfo.type === "network") {
+          setNetworkError(errorInfo.message);
+        }
+
+        setFiles((prev) =>
+          prev.map((f) =>
+            f.id === fileData.id
+              ? {
+                  ...f,
+                  status: "error" as const,
+                  progress: 0,
+                  error: `${errorInfo.message}${currentRetries > 0 ? ` (Attempt ${currentRetries + 1})` : ""}`,
+                }
+              : f,
+          ),
+        );
       }
-      
-      setFiles(prev => prev.map(f => 
-        f.id === fileData.id 
-          ? { 
-              ...f, 
-              status: 'error' as const, 
-              progress: 0,
-              error: `${errorInfo.message}${currentRetries > 0 ? ` (Attempt ${currentRetries + 1})` : ''}`
-            }
-          : f
-      ));
-    }
-  }, [settings, isProcessing, retryCount]);
+    },
+    [settings, isProcessing, retryCount],
+  );
 
   const downloadAll = useCallback(() => {
-    files.forEach(fileData => {
+    files.forEach((fileData) => {
       if (fileData.svgContent) {
         downloadSvg(fileData.svgContent, fileData.file.name);
       }
@@ -343,40 +390,26 @@ export const ProfessionalConverter: React.FC = () => {
   }, [files]);
 
   const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return "0 Bytes";
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
   const getCompressionRatio = (original: number, compressed?: number) => {
     if (!compressed) return null;
     const ratio = ((original - compressed) / original) * 100;
-    return ratio > 0 ? `${ratio.toFixed(1)}% smaller` : `${Math.abs(ratio).toFixed(1)}% larger`;
+    return ratio > 0
+      ? `${ratio.toFixed(1)}% smaller`
+      : `${Math.abs(ratio).toFixed(1)}% larger`;
   };
 
-  const completedFiles = files.filter(f => f.status === 'completed');
-  const hasErrors = files.some(f => f.status === 'error');
-
-  // Premium handlers
-  const handleUpgrade = useCallback((tier: PremiumTier['id']) => {
-    // In a real app, this would integrate with a payment system
-    setCurrentUserTier(tier);
-    setShowPremiumModal(false);
-    setPremiumError('');
-    
-    // Simulate payment success
-    alert(`Successfully upgraded to ${tier} plan! (This is a demo)`);
-  }, []);
-
-  const handleShowPremium = useCallback(() => {
-    setShowPremiumModal(true);
-  }, []);
+  const completedFiles = files.filter((f) => f.status === "completed");
 
   // Preview handlers
   const handlePreview = useCallback((fileData: ConversionFile) => {
-    if (fileData.status === 'completed' && fileData.svgContent) {
+    if (fileData.status === "completed" && fileData.svgContent) {
       setPreviewFile(fileData);
     }
   }, []);
@@ -399,30 +432,13 @@ export const ProfessionalConverter: React.FC = () => {
           <h1 className="text-4xl font-bold text-gray-900">
             Professional Image to SVG Converter
           </h1>
-          <div className="ml-4 flex items-center space-x-2">
-            <div className={`px-3 py-1 rounded-full text-sm font-medium flex items-center space-x-1 ${
-              currentUserTier === 'free' ? 'bg-gray-100 text-gray-700' :
-              currentUserTier === 'pro' ? 'bg-blue-100 text-blue-700' :
-              'bg-purple-100 text-purple-700'
-            }`}>
-              <Crown className="w-4 h-4" />
-              <span>{userTier.name} Plan</span>
-            </div>
-            {currentUserTier === 'free' && (
-              <button
-                onClick={handleShowPremium}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:from-blue-700 hover:to-purple-700 transition-all"
-              >
-                Upgrade
-              </button>
-            )}
-          </div>
         </div>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-          Convert PNG and JPEG images to high-quality SVG vectors with advanced customization options
+          Convert PNG and JPEG images to high-quality SVG vectors with advanced
+          customization options
         </p>
         <div className="mt-2 text-sm text-gray-500">
-          Current limits: {userTier.maxFileSize}MB per file • {userTier.maxBatchSize} files per batch
+          Unlimited batch processing • High-quality vectorization
         </div>
       </div>
 
@@ -431,9 +447,11 @@ export const ProfessionalConverter: React.FC = () => {
         <div className="lg:col-span-1 space-y-6">
           {/* File Upload */}
           <div className="bg-white rounded-xl shadow-lg p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Upload Files</h3>
-            
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Upload Files
+            </h3>
+
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-red-400 transition-colors">
               <input
                 type="file"
                 accept=".png,.jpg,.jpeg,image/png,image/jpeg,image/jpg"
@@ -445,24 +463,37 @@ export const ProfessionalConverter: React.FC = () => {
               />
               <label htmlFor="file-upload" className="cursor-pointer">
                 <div className="text-gray-400 mb-2">
-                  <svg className="mx-auto h-12 w-12" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <svg
+                    className="mx-auto h-12 w-12"
+                    stroke="currentColor"
+                    fill="none"
+                    viewBox="0 0 48 48"
+                  >
+                    <path
+                      d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
                   </svg>
                 </div>
                 <p className="text-sm text-gray-600">
-                  <span className="font-medium text-blue-600">Click to upload</span> or drag and drop
+                  <span className="font-medium text-red-600">
+                    Click to upload
+                  </span>{" "}
+                  or drag and drop
                 </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  PNG, JPEG up to {userTier.maxFileSize}MB each • Max {userTier.maxBatchSize} files
-                </p>
+                <p className="text-xs text-gray-500 mt-1">PNG, JPEG support</p>
               </label>
             </div>
           </div>
 
           {/* Conversion Settings */}
           <div className="bg-white rounded-xl shadow-lg p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Conversion Settings</h3>
-            
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Conversion Settings
+            </h3>
+
             {/* Mode Selection */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -470,49 +501,66 @@ export const ProfessionalConverter: React.FC = () => {
               </label>
               <select
                 value={settings.mode}
-                onChange={(e) => setSettings(prev => ({ ...prev, mode: e.target.value as 'wrapper' | 'vectorize' }))}
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                onChange={(e) =>
+                  setSettings((prev) => ({
+                    ...prev,
+                    mode: e.target.value as "wrapper" | "vectorize",
+                  }))
+                }
+                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                 disabled={isProcessing}
               >
-                <option value="vectorize">True Vectorization (Recommended)</option>
+                <option value="vectorize">
+                  True Vectorization (Recommended)
+                </option>
                 <option value="wrapper">Simple Wrapper (Fast)</option>
               </select>
             </div>
 
             {/* Engine Selection */}
-            {settings.mode === 'vectorize' && (
+            {settings.mode === "vectorize" && (
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Vectorization Engine
                 </label>
                 <select
                   value={settings.engine}
-                  onChange={(e) => setSettings(prev => ({ ...prev, engine: e.target.value as 'potrace' | 'imagetracer' }))}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  onChange={(e) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      engine: e.target.value as "potrace" | "imagetracer",
+                    }))
+                  }
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   disabled={isProcessing}
                 >
-                  <option value="potrace">Potrace (High Quality, Smooth Curves)</option>
-                  <option value="imagetracer">ImageTracer (Color Rich, Detailed)</option>
+                  <option value="potrace">
+                    Potrace (Black & White Line Art)
+                  </option>
+                  <option value="imagetracer">
+                    ImageTracer (Full Color & Detail)
+                  </option>
                 </select>
                 <p className="text-xs text-gray-500 mt-1">
-                  {settings.engine === 'potrace' 
-                    ? 'Potrace creates smooth, scalable vectors ideal for logos and simple graphics'
-                    : 'ImageTracer preserves more colors and details, better for complex images'
-                  }
+                  {settings.engine === "potrace"
+                    ? "Best for logos, sketches, and monochrome line art"
+                    : "Best for photos, complex artwork, and multiple colors"}
                 </p>
               </div>
             )}
 
             {/* Preset Selection */}
-            {settings.mode === 'vectorize' && (
+            {settings.mode === "vectorize" && (
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Quality Preset
                 </label>
                 <select
                   value={settings.preset}
-                  onChange={(e) => setSettings(prev => ({ ...prev, preset: e.target.value }))}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  onChange={(e) =>
+                    setSettings((prev) => ({ ...prev, preset: e.target.value }))
+                  }
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   disabled={isProcessing}
                 >
                   <option value="default">Default</option>
@@ -530,19 +578,19 @@ export const ProfessionalConverter: React.FC = () => {
             )}
 
             {/* Advanced Settings Toggle */}
-            {settings.mode === 'vectorize' && (
+            {settings.mode === "vectorize" && (
               <button
                 onClick={() => setShowAdvanced(!showAdvanced)}
-                className="text-sm text-blue-600 hover:text-blue-800 mb-4"
+                className="text-sm text-red-600 hover:text-red-800 mb-4"
               >
-                {showAdvanced ? 'Hide' : 'Show'} Advanced Settings
+                {showAdvanced ? "Hide" : "Show"} Advanced Settings
               </button>
             )}
 
             {/* Advanced Settings */}
-            {showAdvanced && settings.mode === 'vectorize' && (
+            {showAdvanced && settings.mode === "vectorize" && (
               <div className="space-y-4 border-t pt-4">
-                {settings.engine === 'potrace' ? (
+                {settings.engine === "potrace" ? (
                   // Potrace-specific settings
                   <>
                     <div>
@@ -554,11 +602,18 @@ export const ProfessionalConverter: React.FC = () => {
                         min="50"
                         max="200"
                         value={settings.threshold}
-                        onChange={(e) => setSettings(prev => ({ ...prev, threshold: parseInt(e.target.value) }))}
-                        className="w-full"
+                        onChange={(e) =>
+                          setSettings((prev) => ({
+                            ...prev,
+                            threshold: parseInt(e.target.value),
+                          }))
+                        }
+                        className="w-full accent-red-600"
                         disabled={isProcessing}
                       />
-                      <p className="text-xs text-gray-500">Controls black/white threshold for tracing</p>
+                      <p className="text-xs text-gray-500">
+                        Controls black/white threshold for tracing
+                      </p>
                     </div>
 
                     <div>
@@ -570,11 +625,18 @@ export const ProfessionalConverter: React.FC = () => {
                         min="1"
                         max="10"
                         value={settings.turdSize}
-                        onChange={(e) => setSettings(prev => ({ ...prev, turdSize: parseInt(e.target.value) }))}
-                        className="w-full"
+                        onChange={(e) =>
+                          setSettings((prev) => ({
+                            ...prev,
+                            turdSize: parseInt(e.target.value),
+                          }))
+                        }
+                        className="w-full accent-red-600"
                         disabled={isProcessing}
                       />
-                      <p className="text-xs text-gray-500">Minimum area of curves (removes noise)</p>
+                      <p className="text-xs text-gray-500">
+                        Minimum area of curves (removes noise)
+                      </p>
                     </div>
 
                     <div>
@@ -587,11 +649,18 @@ export const ProfessionalConverter: React.FC = () => {
                         max="0.5"
                         step="0.05"
                         value={settings.optTolerance}
-                        onChange={(e) => setSettings(prev => ({ ...prev, optTolerance: parseFloat(e.target.value) }))}
-                        className="w-full"
+                        onChange={(e) =>
+                          setSettings((prev) => ({
+                            ...prev,
+                            optTolerance: parseFloat(e.target.value),
+                          }))
+                        }
+                        className="w-full accent-red-600"
                         disabled={isProcessing}
                       />
-                      <p className="text-xs text-gray-500">Higher values = smoother curves</p>
+                      <p className="text-xs text-gray-500">
+                        Higher values = smoother curves
+                      </p>
                     </div>
 
                     <div className="flex items-center">
@@ -599,11 +668,19 @@ export const ProfessionalConverter: React.FC = () => {
                         type="checkbox"
                         id="optCurve"
                         checked={settings.optCurve}
-                        onChange={(e) => setSettings(prev => ({ ...prev, optCurve: e.target.checked }))}
-                        className="mr-2"
+                        onChange={(e) =>
+                          setSettings((prev) => ({
+                            ...prev,
+                            optCurve: e.target.checked,
+                          }))
+                        }
+                        className="mr-2 accent-red-600"
                         disabled={isProcessing}
                       />
-                      <label htmlFor="optCurve" className="text-sm font-medium text-gray-700">
+                      <label
+                        htmlFor="optCurve"
+                        className="text-sm font-medium text-gray-700"
+                      >
                         Optimize Curves
                       </label>
                     </div>
@@ -620,8 +697,13 @@ export const ProfessionalConverter: React.FC = () => {
                         min="2"
                         max="64"
                         value={settings.numberOfColors}
-                        onChange={(e) => setSettings(prev => ({ ...prev, numberOfColors: parseInt(e.target.value) }))}
-                        className="w-full"
+                        onChange={(e) =>
+                          setSettings((prev) => ({
+                            ...prev,
+                            numberOfColors: parseInt(e.target.value),
+                          }))
+                        }
+                        className="w-full accent-red-600"
                         disabled={isProcessing}
                       />
                     </div>
@@ -636,8 +718,13 @@ export const ProfessionalConverter: React.FC = () => {
                         max="2"
                         step="0.1"
                         value={settings.ltres}
-                        onChange={(e) => setSettings(prev => ({ ...prev, ltres: parseFloat(e.target.value) }))}
-                        className="w-full"
+                        onChange={(e) =>
+                          setSettings((prev) => ({
+                            ...prev,
+                            ltres: parseFloat(e.target.value),
+                          }))
+                        }
+                        className="w-full accent-red-600"
                         disabled={isProcessing}
                       />
                     </div>
@@ -652,8 +739,13 @@ export const ProfessionalConverter: React.FC = () => {
                         max="2"
                         step="0.1"
                         value={settings.qtres}
-                        onChange={(e) => setSettings(prev => ({ ...prev, qtres: parseFloat(e.target.value) }))}
-                        className="w-full"
+                        onChange={(e) =>
+                          setSettings((prev) => ({
+                            ...prev,
+                            qtres: parseFloat(e.target.value),
+                          }))
+                        }
+                        className="w-full accent-red-600"
                         disabled={isProcessing}
                       />
                     </div>
@@ -671,8 +763,13 @@ export const ProfessionalConverter: React.FC = () => {
                     max="3"
                     step="0.1"
                     value={settings.scale}
-                    onChange={(e) => setSettings(prev => ({ ...prev, scale: parseFloat(e.target.value) }))}
-                    className="w-full"
+                    onChange={(e) =>
+                      setSettings((prev) => ({
+                        ...prev,
+                        scale: parseFloat(e.target.value),
+                      }))
+                    }
+                    className="w-full accent-red-600"
                     disabled={isProcessing}
                   />
                 </div>
@@ -687,8 +784,13 @@ export const ProfessionalConverter: React.FC = () => {
                     max="5"
                     step="0.5"
                     value={settings.strokeWidth}
-                    onChange={(e) => setSettings(prev => ({ ...prev, strokeWidth: parseFloat(e.target.value) }))}
-                    className="w-full"
+                    onChange={(e) =>
+                      setSettings((prev) => ({
+                        ...prev,
+                        strokeWidth: parseFloat(e.target.value),
+                      }))
+                    }
+                    className="w-full accent-red-600"
                     disabled={isProcessing}
                   />
                 </div>
@@ -717,9 +819,9 @@ export const ProfessionalConverter: React.FC = () => {
                   <button
                     onClick={convertFiles}
                     disabled={isProcessing || files.length === 0}
-                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                    className="bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg font-medium transition-colors"
                   >
-                    {isProcessing ? 'Converting...' : 'Convert Files'}
+                    {isProcessing ? "Converting..." : "Convert Files"}
                   </button>
                 </div>
               )}
@@ -732,52 +834,69 @@ export const ProfessionalConverter: React.FC = () => {
             ) : (
               <div className="space-y-3">
                 {files.map((fileData) => (
-                  <div key={fileData.id} className="border border-gray-200 rounded-lg p-4">
+                  <div
+                    key={fileData.id}
+                    className="border border-gray-200 rounded-lg p-4"
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-3">
-                          <div className={`w-3 h-3 rounded-full ${
-                            fileData.status === 'completed' ? 'bg-green-500' :
-                            fileData.status === 'processing' ? 'bg-blue-500' :
-                            fileData.status === 'error' ? 'bg-red-500' :
-                            'bg-gray-300'
-                          }`} />
+                          <div
+                            className={`w-3 h-3 rounded-full ${
+                              fileData.status === "completed"
+                                ? "bg-green-500"
+                                : fileData.status === "processing"
+                                  ? "bg-red-500"
+                                  : fileData.status === "error"
+                                    ? "bg-red-500"
+                                    : "bg-gray-300"
+                            }`}
+                          />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-gray-900 truncate">
                               {fileData.file.name}
                             </p>
                             <div className="flex items-center space-x-4 text-xs text-gray-500">
-                              <span>{formatFileSize(fileData.originalSize)}</span>
+                              <span>
+                                {formatFileSize(fileData.originalSize)}
+                              </span>
                               {fileData.compressedSize && (
                                 <>
-                                  <span>→ {formatFileSize(fileData.compressedSize)}</span>
+                                  <span>
+                                    → {formatFileSize(fileData.compressedSize)}
+                                  </span>
                                   <span className="text-green-600">
-                                    {getCompressionRatio(fileData.originalSize, fileData.compressedSize)}
+                                    {getCompressionRatio(
+                                      fileData.originalSize,
+                                      fileData.compressedSize,
+                                    )}
                                   </span>
                                 </>
                               )}
                             </div>
                           </div>
                         </div>
-                        
-                        {fileData.status === 'processing' && (
+
+                        {fileData.status === "processing" && (
                           <div className="mt-2">
                             <div className="w-full bg-gray-200 rounded-full h-1">
-                              <div 
-                                className="bg-blue-600 h-1 rounded-full transition-all duration-300"
+                              <div
+                                className="bg-red-600 h-1 rounded-full transition-all duration-300"
                                 style={{ width: `${fileData.progress}%` }}
                               />
                             </div>
                           </div>
                         )}
-                        
+
                         {fileData.error && (
-                          <p className="mt-1 text-xs text-red-600">{fileData.error}</p>
+                          <p className="mt-1 text-xs text-red-600">
+                            {fileData.error}
+                          </p>
                         )}
                       </div>
 
                       <div className="flex items-center space-x-2 ml-4">
-                        {fileData.status === 'completed' && (
+                        {fileData.status === "completed" && (
                           <>
                             <button
                               onClick={() => handlePreview(fileData)}
@@ -789,13 +908,13 @@ export const ProfessionalConverter: React.FC = () => {
                             </button>
                             <button
                               onClick={() => downloadFile(fileData)}
-                              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+                              className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
                             >
                               Download
                             </button>
                           </>
                         )}
-                        {fileData.status === 'error' && (
+                        {fileData.status === "error" && (
                           <button
                             onClick={() => retryFile(fileData)}
                             disabled={isProcessing}
@@ -809,8 +928,18 @@ export const ProfessionalConverter: React.FC = () => {
                           disabled={isProcessing}
                           className="text-gray-400 hover:text-red-600 disabled:opacity-50"
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M6 18L18 6M6 6l12 12"
+                            />
                           </svg>
                         </button>
                       </div>
@@ -825,15 +954,21 @@ export const ProfessionalConverter: React.FC = () => {
               <div className="mt-6 pt-4 border-t border-gray-200">
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div>
-                    <p className="text-2xl font-bold text-gray-900">{files.length}</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {files.length}
+                    </p>
                     <p className="text-sm text-gray-500">Total Files</p>
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-green-600">{completedFiles.length}</p>
+                    <p className="text-2xl font-bold text-green-600">
+                      {completedFiles.length}
+                    </p>
                     <p className="text-sm text-gray-500">Completed</p>
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-red-600">{files.filter(f => f.status === 'error').length}</p>
+                    <p className="text-2xl font-bold text-red-600">
+                      {files.filter((f) => f.status === "error").length}
+                    </p>
                     <p className="text-sm text-gray-500">Errors</p>
                   </div>
                 </div>
@@ -849,12 +984,12 @@ export const ProfessionalConverter: React.FC = () => {
           <div className="flex items-start space-x-3">
             <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
             <div>
-              <h3 className="text-sm font-medium text-red-800">Connection Error</h3>
-              <div className="mt-1 text-sm text-red-700">
-                {networkError}
-              </div>
+              <h3 className="text-sm font-medium text-red-800">
+                Connection Error
+              </h3>
+              <div className="mt-1 text-sm text-red-700">{networkError}</div>
               <button
-                onClick={() => setNetworkError('')}
+                onClick={() => setNetworkError("")}
                 className="mt-2 text-sm font-medium text-red-800 hover:text-red-900 underline"
               >
                 Dismiss
@@ -862,36 +997,6 @@ export const ProfessionalConverter: React.FC = () => {
             </div>
           </div>
         </div>
-      )}
-
-      {/* Premium Error Display */}
-      {premiumError && (
-        <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <div className="flex items-start space-x-3">
-            <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
-            <div>
-              <h3 className="text-sm font-medium text-yellow-800">Premium Limit Reached</h3>
-              <div className="mt-1 text-sm text-yellow-700 whitespace-pre-line">
-                {premiumError}
-              </div>
-              <button
-                onClick={handleShowPremium}
-                className="mt-2 text-sm font-medium text-yellow-800 hover:text-yellow-900 underline"
-              >
-                Upgrade your plan to continue
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Premium Modal */}
-      {showPremiumModal && (
-        <PremiumFeatures
-          currentTier={currentUserTier}
-          onUpgrade={handleUpgrade}
-          onClose={() => setShowPremiumModal(false)}
-        />
       )}
 
       {/* Preview Comparison Modal */}
