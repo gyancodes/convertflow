@@ -50,13 +50,6 @@ Body:
 - engine: 'potrace' | 'imagetracer'
 ```
 
-## Premium Tiers
-
-| Tier | Max File Size | Max Batch Size | Rate Limit |
-|------|---------------|----------------|------------|
-| Free | 5MB | 3 files | 100 req/15min |
-| Pro | 50MB | 25 files | 1000 req/15min |
-| Enterprise | 200MB | 100 files | 1000 req/15min |
 
 ## Deployment
 
