@@ -1,86 +1,84 @@
 # ConvertFlow
 
-Professional PNG/JPEG to SVG converter with dual-engine processing and batch conversion capabilities.
+<img src="screenshot.png" alt="ConvertFlow Studio Interface" width="600" />
 
-## Features
+**ConvertFlow** is a professional-grade, open-source image-to-vector converter. It transforms raster images (PNG, JPG, BMP) into scalable vector graphics (SVG) using a powerful dual-engine approach.
 
-- **Dual Engine Processing**: Potrace (smooth curves) and ImageTracer (color preservation)
-- **Batch Conversion**: Process multiple files simultaneously
-- **Premium Tiers**: Free, Pro, and Enterprise plans with different limits
-- **Server-Side Processing**: Reliable backend API with rate limiting
-- **Advanced Options**: Customizable conversion settings per engine
-- **ZIP Downloads**: Batch download converted files
+Designed for privacy and performance, ConvertFlow offers client-side processing for full-color conversions and a robust server-side engine for high-precision black & white line art.
 
-## Tech Stack
+## 🚀 Features
 
-- **Frontend**: React 18 + TypeScript + Vite + Tailwind CSS
-- **Backend**: Node.js + Express + Sharp + Potrace + ImageTracer
-- **Deployment**: Railway (backend) + Vercel (frontend)
+- **Dual Conversion Engines**:
+  - **ImageTracer (Client-side)**: Full-color vectorization running entirely in your browser. 100% private.
+  - **Potrace (Server-side)**: Industry-standard algorithm for high-contrast black & white outlines.
+- **"Studio" Interface**: A professional, focused workspace for managing your conversion queue.
+- **Batch Processing**: Convert multiple images simultaneously.
+- **Unlimited & Free**: No paywalls, no file size limits, no watermarks.
+- **Modern UI**: Clean, Vercel-inspired aesthetic with a responsive design.
+- **Privacy First**: Files processed with ImageTracer never leave your device.
 
-## Quick Start
+## 🛠️ Tech Stack
+
+- **Frontend**: React 18, TypeScript, Vite
+- **Styling**: Tailwind CSS, Framer Motion, Lucide Icons
+- **Vectorization**: `imagetracerjs` (Client), `potrace` (Server/Node.js)
+- **Backend**: Node.js, Express (for Potrace fallback)
+
+## 📦 Installation
+
+Clone the repository and install dependencies for both client and server.
 
 ```bash
-# Install dependencies
-npm run install:all
+# Clone repository
+git clone https://github.com/gyancodes/convertflow.git
+cd border-radius
 
-# Start development servers
+# Install Client Dependencies
+cd client
+npm install
+
+# Install Server Dependencies
+cd ../server
+npm install
+```
+
+## ⚡ Usage
+
+Run the development servers:
+
+```bash
+# Start Client and Server concurrently (from root if configured, or separately)
+
+# Terminal 1: Client
+cd client
+npm run dev
+
+# Terminal 2: Server
+cd server
 npm run dev
 ```
 
-## API Endpoints
+Visit `http://localhost:5173` to start converting.
 
-### Single File Conversion
-```
-POST /api/convert/single
-Content-Type: multipart/form-data
+## 🔧 Configuration
 
-Body:
-- file: Image file (PNG/JPEG)
-- engine: 'potrace' | 'imagetracer'
-- mode: 'vectorize' | 'wrapper'
+### Environment Variables
+
+**Client (`client/.env`)**
+```env
+VITE_API_URL=http://localhost:3000
 ```
 
-### Batch Conversion
-```
-POST /api/convert/batch
-Content-Type: multipart/form-data
-
-Body:
-- files: Array of image files
-- engine: 'potrace' | 'imagetracer'
+**Server (`server/.env`)**
+```env
+PORT=3000
+FRONTEND_URL=http://localhost:5173
 ```
 
+## 🤝 Contributing
 
-## Deployment
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-### Railway (Backend)
-1. Create Railway project
-2. Set root directory: `server`
-3. Environment variables:
-   ```
-   NODE_ENV=production
-   FRONTEND_URL=https://your-vercel-app.vercel.app
-   JWT_SECRET=your-secure-secret
-   ```
+## 📄 License
 
-### Vercel (Frontend)
-1. Create Vercel project
-2. Set root directory: `client`
-3. Environment variables:
-   ```
-   VITE_API_URL=https://your-railway-app.railway.app
-   ```
-
-## Scripts
-
-```bash
-npm run dev              # Start both services
-npm run dev:client       # Client only
-npm run dev:server       # Server only
-npm run build           # Build client
-npm run test            # Run tests
-```
-
-## License
-
-MIT
+This project is open source and available under the [MIT License](LICENSE).
